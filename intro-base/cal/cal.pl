@@ -100,7 +100,7 @@ sub make_month($$$) {
 sub get_wday_by_mon($$) {
 	my ($month, $year) = @_;
 	my $time = timelocal(0,0,0,1,$month,$year - 1900);
-	my ($sec,$min,$hour,$mday,$mon,$yea,$wday,$yday,$isdst) = localtime($time);
+	my $wday = (localtime($time))[6];
 	$wday = ($wday + 6) % 7;
 	return $wday;
 }
