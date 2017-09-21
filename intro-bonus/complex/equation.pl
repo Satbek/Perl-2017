@@ -1,8 +1,7 @@
 #!/usr/bin/perl
-use strict;
+use 5.016;
 use warnings;
 use DDP;
-use 5.018;
 die "Bad arguments" unless @ARGV;
 die "Bad arguments" if @ARGV > 3;
 die "not quadratic equation" if ($ARGV[0] == 0);
