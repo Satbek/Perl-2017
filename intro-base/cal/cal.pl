@@ -106,6 +106,7 @@ sub get_wday_by_mon($$) {
 }
 
 if (@ARGV == 1) {
+	die "incorrect input !" if ($month < 1 or $month > 12);
 	my ($month) = @ARGV;
 	# нам передали номер месяца. проверяем параметр и
 	# печатаем календарь на этот месяц
