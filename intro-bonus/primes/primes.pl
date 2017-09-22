@@ -6,8 +6,7 @@ die 'bad arguments' if (@ARGV != 1);
 my $n = shift @ARGV;
 die 'not natural' if ($n < 1 or ($n - int($n) != 0));
 
-my @prime;
-push @prime, 1 for (1..$n + 1); 
+my @prime = (1) x $n;
 
 $prime[0] = $prime[1] = 0;
 for my $i(2..$n) {
