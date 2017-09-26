@@ -107,10 +107,10 @@ sub get_wday_by_mon($$) {
 
 if (@ARGV == 1) {
 	my ($month) = @ARGV;
-	die "incorrect input !" if ($month < 1 or $month > 12);
+	die "incorrect input !" if ($month < 1 or $month > 12 or $month != int($month));
 	# нам передали номер месяца. проверяем параметр и
 	# печатаем календарь на этот месяц
-	my $wday = get_wday_by_mon($month, $year);
+	my $wday = get_wday_by_mon($month - 1, $year);
 	my $result = make_month($wday, $month - 1, $year);
 	$result = join "\n", @{$result};
 	say make_month_head("$abbr[$month - 1] $year")."\n".$result;
@@ -127,6 +127,7 @@ elsif (not @ARGV) {
 		push @months, \@buf;
 	}
 	say make_year_head("$year");
+
 	for my $i(0..3) {
 		for my $j(0..7) { printf("%s  %s  %s\n", $months[3*$i]->[$j], $months[3*$i + 1]->[$j], $months[3*$i + 2]->[$j])};
 	}
