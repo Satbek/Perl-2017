@@ -17,6 +17,8 @@ $ perl lingnum.pl 10000
 $ perl lingnum.pl 1003102
 один миллион три тысячи сто два
 =cut
+# 
+
 die "only one argument!" unless @ARGV == 1;
 my $n = shift;
 
