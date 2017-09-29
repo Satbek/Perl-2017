@@ -1,9 +1,11 @@
-октябрь 1 1
-ноябрь 2
-декабрь 4
-январь 6
-февраль 0
-март -1
-MAR
-AAA
-ZZZ
+10 JUN
+9 JAN
+3 FEB	
+5 MAR
+2 APR
+3 JUN
+4 MAY
+5 DEC
+6 AUG
+1 SEP
+3 OCT

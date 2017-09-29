@@ -26,7 +26,6 @@ GetOptions ('k=s' => \$k, 'n' => \$n, 'r' => \$r, 'u' => \$u, 'b' => \$b_,
 -h — сортировать по числовому значению с учётом суффиксов
 =cut
 
-die "incorrect k" if $k != int ($k);
 
 my %compare;
 my %columns;
@@ -49,6 +48,7 @@ while (my $line = <STDIN>) {
 
 
 if ($k) {
+	die "incorrect k" if $k != int ($k);
 	for (@data) {
 		my @buf = split ' ', $_;
 		$columns{$_} = $buf[$k - 1];
@@ -108,7 +108,7 @@ die "filters do not work!" if keys %compare != 1;
 my $comp = (values %compare)[0];
 
 my %months = (
-	'JUN' => 1,
+	'JAN' => 1,
 	'FEB' => 2,
 	'MAR' => 3,
 	'APR' => 4,
@@ -124,10 +124,14 @@ my %months = (
 
 
 my $M_compare = sub {
- 	if (!exists $months{$a} && !exists $months{$b}) {
+	my ($_a, $_b) = ($a, $b);
+	if ($k) {
+		($_a, $_b) = ($columns{$a}, $columns{$b});
+	}
+ 	if (!exists $months{$_a} && !exists $months{$_b}) {
 		return $comp;
 	}
-	elsif (exists $months{$a} && !exists $months{$b}) {
+	elsif (exists $months{$_a} && !exists $months{$_b}) {
 		if ($r) {
 			return -1;
 	 	}
@@ -135,7 +139,7 @@ my $M_compare = sub {
 	 		return 1;
 	 	}
 	}
-	elsif (exists $months{$b} && !exists $months{$a}) {
+	elsif (exists $months{$_b} && !exists $months{$_a}) {
 		if ($r) {
 			return 1;
 		}
@@ -143,8 +147,13 @@ my $M_compare = sub {
 			return -1;
 		}
 	}
-	elsif (exists $months{$b} && exists $months{$a}) {
-		return $months{$a} <=> $months{$b};
+	elsif (exists $months{$_b} && exists $months{$_a}) {
+		if ($r) {
+			return $months{$_b} <=> $months{$_a};
+		}
+		else {
+			return $months{$_a} <=> $months{$_b};
+		}
  	}
 };
 
