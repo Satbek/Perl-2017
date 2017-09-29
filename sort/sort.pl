@@ -129,7 +129,7 @@ my $M_compare = sub {
 		($_a, $_b) = ($columns{$a}, $columns{$b});
 	}
  	if (!exists $months{$_a} && !exists $months{$_b}) {
-		return $comp;
+		return $comp->($a,$b);
 	}
 	elsif (exists $months{$_a} && !exists $months{$_b}) {
 		if ($r) {
@@ -157,11 +157,13 @@ my $M_compare = sub {
  	}
 };
 
+my $comp_ = $comp;
 if ($M) {
-	$comp = $M_compare;
+	$comp_ = $M_compare;
 }
 
-my $compare = $comp;
+my $compare = $comp_;
+
 
 my $cmp = Array::Compare->new;
 if ($c) {
