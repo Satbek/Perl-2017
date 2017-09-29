@@ -165,6 +165,39 @@ if ($M) {
 my $compare = $comp_;
 
 
+my %blocks = (
+	'kB' => 1,
+	'k' => 1,
+	'K' => 1,
+	'KiB' => 2,
+	'MB' => 3,
+	'M' => 3,
+	'MiB' => 4,
+	'GB' => 5,
+	'G' => 5,
+	'GiB' => 6,
+	'TB' => 7,
+	'T' => 7,
+	'TiB' => 8,
+	'PB' => 9,
+	'P' => 9,
+	'PiB' => 10,
+	'EB' => 11,
+	'E' => 11,
+	'EiB' => 12,
+	'ZB' => 13,
+	'Z' => 13,
+	'ZiB' => 14,
+	'YB' => 15,
+	'Y' => 15,
+	'YiB' => 16,
+);
+
+my $h_compare = sub {
+
+	
+}
+
 my $cmp = Array::Compare->new;
 if ($c) {
 	for my $i(0..@data - 2) {
