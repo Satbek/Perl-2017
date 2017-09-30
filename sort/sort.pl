@@ -176,31 +176,31 @@ my $comp__ = $comp_;
 
 
 my %blocks = (
-	'kB' => [10,3],
-	'k' => [10,3],
-	'K' => [10,3],
-	'KiB' => [2,10],
-	'MB' => [10,6],
-	'M' => [10,6],
-	'MiB' => [2,20],
-	'GB' => [10,9],
-	'G' => [10,9],
-	'GiB' => [2,30],
-	'TB' => [10,12],
-	'T' => [10,12],
-	'TiB' => [2,40],
-	'PB' => [10,15],
-	'P' => [10,15],
-	'PiB' => [2,50],
-	'EB' => [10,18],
-	'E' => [10,18],
-	'EiB' => [2,60],
-	'ZB' => [10,21],
-	'Z' => [10,21],
-	'ZiB' => [2,70],
-	'YB' => [10,24],
-	'Y' => [10,24],
-	'YiB' => [2,80],
+	'kB' => 1,
+	'k' => 1,
+	'K' => 1,
+	'KiB' => 2,
+	'MB' => 3,
+	'M' => 3,
+	'MiB' => 4,
+	'GB' => 5,
+	'G' => 5,
+	'GiB' => 6,
+	'TB' => 7,
+	'T' => 7,
+	'TiB' => 8,
+	'PB' => 9,
+	'P' => 9,
+	'PiB' => 10,
+	'EB' => 11,
+	'E' => 11,
+	'EiB' => 12,
+	'ZB' => 13,
+	'Z' => 13,
+	'ZiB' => 14,
+	'YB' => 15,
+	'Y' => 15,
+	'YiB' => 16,
 );
 
 my $h_compare = sub {
@@ -216,13 +216,21 @@ my $h_compare = sub {
 		}
 	}
 	if (defined $d_a && defined $sig_a && defined $d_b && defined $sig_b) {
-		if ($r) {
-			return $d_b*($blocks{$sig_b}->[0]**$blocks{$sig_b}->[1]) <=>
-				$d_a*($blocks{$sig_a}->[0]**$blocks{$sig_a}->[1]);
+		if ($r){
+			if (($blocks{$sig_b} <=> $blocks{$sig_a}) != 0) {
+				return $blocks{$sig_b} <=> $blocks{$sig_a};
+			}
+			else {
+				return $d_b <=> $d_a;
+			}
 		}
 		else {
-			return $d_a*($blocks{$sig_a}->[0]**$blocks{$sig_a}->[1]) <=>
-				$d_b*($blocks{$sig_b}->[0]**$blocks{$sig_b}->[1]);	
+			if (($blocks{$sig_a} <=> $blocks{$sig_b}) != 0){
+				return $blocks{$sig_a} <=> $blocks{$sig_b};
+			}
+			else {
+				return $d_a <=> $d_b;
+			}
 		}
 	}
 	elsif (defined $d_a && defined $sig_a && !defined $d_b && !defined $sig_b) {
