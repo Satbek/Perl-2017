@@ -162,7 +162,7 @@ if ($M) {
 	$comp_ = $M_compare;
 }
 
-my $compare = $comp_;
+my $comp__ = $comp_;
 
 
 my %blocks = (
@@ -190,10 +190,37 @@ my %blocks = (
 	'ZiB' => [2,70],
 	'YB' => [10,24],
 	'Y' => [10,24],
-	'YiB' => [2,80]
+	'YiB' => [2,80],
 );
 
+my $h_compare = sub {
+	my ($d_a, $sig_a, $d_b, $sig_b);
+	for (keys %blocks) {
+		if ($a =~ /(\d+)($_)/) {
+			$d_a = $1; 
+			$sig_a = $2;
+		}
+		if ($b =~ /(\d+)($_)/) {
+			$d_b = $1;
+			$sig_b = $2;
+		}
+	}
+	if (defined $d_a && defined $sig_a && defined $d_b && defined $sig_b) {
+		return $d_a*($blocks{$sig_a}->[0]**$blocks{$sig_a}->[1]) <=>
+				$d_b*($blocks{$sig_b}->[0]**$blocks{$sig_b}->[1]);
+	}
+	else {
+		return $comp__->($a,$b);
+	}
+};
+
+my $compare = $comp__;
+if ($h) {
+	$compare = $h_compare;
+}
+
 my $cmp = Array::Compare->new;
+
 if ($c) {
 	for my $i(0..@data - 2) {
 		my @sorted = sort $compare ($data[$i],$data[$i + 1]);
@@ -207,4 +234,7 @@ if ($c) {
 }
 
 my @result = sort $compare @data;
+
 say join "\n", @result;
+
+$h_compare->("1G","1KiB");
