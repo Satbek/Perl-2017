@@ -7,9 +7,11 @@ use Getopt::Long;
 use List::Util qw(uniqnum uniqstr);
 use Array::Compare;
 my ($k, $n, $r, $u, $b_, $c, $h, $M);
+
 GetOptions ('k=s' => \$k, 'n' => \$n, 'r' => \$r, 'u' => \$u, 'b' => \$b_,
 			'c' => \$c, 'M' => \$M, 'h' => \$h);
 
+die "can't set M and h together!" if defined $M && defined $h;
 =task
 Основное
 Поддержать ключи
@@ -128,16 +130,16 @@ my $M_compare = sub {
 	if ($k) {
 		($_a, $_b) = ($columns{$a}, $columns{$b});
 	}
- 	if (!exists $months{$_a} && !exists $months{$_b}) {
+	if (!exists $months{$_a} && !exists $months{$_b}) {
 		return $comp->($a,$b);
 	}
 	elsif (exists $months{$_a} && !exists $months{$_b}) {
 		if ($r) {
 			return -1;
-	 	}
-	 	else {
-	 		return 1;
-	 	}
+		}
+		else {
+			return 1;
+		}
 	}
 	elsif (exists $months{$_b} && !exists $months{$_a}) {
 		if ($r) {
@@ -154,7 +156,7 @@ my $M_compare = sub {
 		else {
 			return $months{$_a} <=> $months{$_b};
 		}
- 	}
+	}
 };
 
 my $comp_ = $comp;
@@ -206,11 +208,33 @@ my $h_compare = sub {
 		}
 	}
 	if (defined $d_a && defined $sig_a && defined $d_b && defined $sig_b) {
-		return $d_a*($blocks{$sig_a}->[0]**$blocks{$sig_a}->[1]) <=>
-				$d_b*($blocks{$sig_b}->[0]**$blocks{$sig_b}->[1]);
+		if ($r) {
+			return $d_b*($blocks{$sig_b}->[0]**$blocks{$sig_b}->[1]) <=>
+				$d_a*($blocks{$sig_a}->[0]**$blocks{$sig_a}->[1]);
+		}
+		else {
+			return $d_a*($blocks{$sig_a}->[0]**$blocks{$sig_a}->[1]) <=>
+				$d_b*($blocks{$sig_b}->[0]**$blocks{$sig_b}->[1]);	
+		}
 	}
-	else {
-		return $comp__->($a,$b);
+	elsif (defined $d_a && defined $sig_a && !defined $d_b && !defined $sig_b) {
+		if ($r) {
+			return -1;
+		}
+		else {
+			return 1;
+		}
+	}
+	elsif (!defined $d_a && !defined $sig_a && defined $d_b && defined $sig_b) {
+		if ($r) {
+			return 1;
+		}
+		else {
+			return -1;
+		}
+	}
+	elsif (!defined $d_a && !defined $sig_a && !defined $d_b && !defined $sig_b) {
+		$comp__->($a, $b)
 	}
 };
 
@@ -236,5 +260,3 @@ if ($c) {
 my @result = sort $compare @data;
 
 say join "\n", @result;
-
-$h_compare->("1G","1KiB");
