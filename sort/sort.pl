@@ -2,6 +2,7 @@
 use 5.016;
 use warnings;
 no warnings "uninitialized";
+no warnings 'numeric';
 use DDP;
 use Getopt::Long;
 use List::Util qw(uniqnum uniqstr);
@@ -12,6 +13,13 @@ GetOptions ('k=s' => \$k, 'n' => \$n, 'r' => \$r, 'u' => \$u, 'b' => \$b_,
 			'c' => \$c, 'M' => \$M, 'h' => \$h);
 
 die "can't set M and h together!" if defined $M && defined $h;
+
+die "can't set h and n together!" if defined $n && defined $h; 
+
+if ($h) {
+	$n = 1;#for default sort
+}
+
 =task
 Основное
 Поддержать ключи
