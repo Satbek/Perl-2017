@@ -145,8 +145,8 @@ my $M_compare = sub {
 		if ($r) {
 			return -1;
 		}
-		else {
-			return 1;
+			else {
+		return 1;
 		}
 	}
 	elsif (exists $months{$_b} && !exists $months{$_a}) {
