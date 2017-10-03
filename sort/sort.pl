@@ -252,8 +252,6 @@ my $h_compare = sub($$) {
 		}
 	}
 	elsif (!defined $d_a && !defined $sig_a && !defined $d_b && !defined $sig_b) {
-		say 1;
-		say $comp__->($a, $b);
 		return $comp__->($a, $b);
 	}
 };
