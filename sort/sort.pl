@@ -294,5 +294,5 @@ if ($c) {
 
 my @result = sort $compare @data;
 
-p @result;
+#p @result;
 say join "\n", @result;
