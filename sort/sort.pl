@@ -40,15 +40,15 @@ if ($h) {
 my %compare;
 my %columns;
 
-$compare{compare_str_def} = sub {$a cmp $b};
-$compare{compare_nums_def} = sub {$a <=> $b};
-$compare{compare_str_rev} = sub {$b cmp $a};
-$compare{compare_nums_rev} = sub {$b <=> $a};
+$compare{compare_str_def} = sub($$) {($a, $b) = @_; fc($a) cmp fc($b)};
+$compare{compare_nums_def} = sub($$) {($a, $b) = @_; $a <=> $b};
+$compare{compare_str_rev} = sub($$) {($a, $b) = @_; fc($b) cmp fc($a)};
+$compare{compare_nums_rev} = sub($$) {($a, $b) = @_; $b <=> $a};
 
-$compare{compare_str_def_k} = sub {$columns{$a} cmp $columns{$b}};
-$compare{compare_nums_def_k} = sub {$columns{$a} <=> $columns{$b}};
-$compare{compare_str_rev_k} = sub {$columns{$a} cmp $columns{$b}};
-$compare{compare_nums_rev_k} = sub {$columns{$a} <=> $columns{$b}};
+$compare{compare_str_def_k} = sub($$) {($a, $b) = @_; fc($columns{$a}) cmp fc($columns{$b})};
+$compare{compare_nums_def_k} = sub($$) {($a, $b) = @_; $columns{$a} <=> $columns{$b}};
+$compare{compare_str_rev_k} = sub($$) {($a, $b) = @_; fc($columns{$a}) cmp fc($columns{$b})};
+$compare{compare_nums_rev_k} = sub($$) {($a, $b) = @_; $columns{$a} <=> $columns{$b}};
 
 my @data;
 while (my $line = <STDIN>) {
@@ -133,7 +133,8 @@ my %months = (
 );
 
 
-my $M_compare = sub {
+my $M_compare = sub($$) {
+	($a, $b) = @_;
 	my ($_a, $_b) = ($a, $b);
 	if ($k) {
 		($_a, $_b) = ($columns{$a}, $columns{$b});
@@ -203,7 +204,8 @@ my %blocks = (
 	'YiB' => 16,
 );
 
-my $h_compare = sub {
+my $h_compare = sub($$) {
+	($a, $b) = @_;
 	my ($d_a, $sig_a, $d_b, $sig_b);
 	for (keys %blocks) {
 		if ($a =~ /(\d+)($_)/) {
@@ -250,7 +252,9 @@ my $h_compare = sub {
 		}
 	}
 	elsif (!defined $d_a && !defined $sig_a && !defined $d_b && !defined $sig_b) {
-		$comp__->($a, $b)
+		say 1;
+		say $comp__->($a, $b);
+		return $comp__->($a, $b);
 	}
 };
 
@@ -259,8 +263,13 @@ if ($h) {
 	$comp___ = $h_compare;
 }
 
-my $b_compare = sub {
-	return $comp___->($a, $b);
+my $b_compare = sub($$) {
+	($a, $b) = @_;
+	$a =~ /(.*?)\s*$/;
+	my $first = $1;
+	$b =~ /(.*?)\s*$/;
+	my $second = $1;
+	return $comp___->($first, $second);
 };
 
 my $compare;
@@ -285,5 +294,5 @@ if ($c) {
 
 my @result = sort $compare @data;
 
-#p @result;
+p @result;
 say join "\n", @result;
