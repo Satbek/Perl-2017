@@ -254,9 +254,19 @@ my $h_compare = sub {
 	}
 };
 
-my $compare = $comp__;
+my $comp___ = $comp__;
 if ($h) {
-	$compare = $h_compare;
+	$comp___ = $h_compare;
+}
+
+my $b_compare = sub {
+	return $comp___->($a, $b);
+};
+
+my $compare;
+$compare = $comp___;
+if ($b_) {
+	$compare = $b_compare;
 }
 
 my $cmp = Array::Compare->new;
@@ -275,4 +285,5 @@ if ($c) {
 
 my @result = sort $compare @data;
 
+#p @result;
 say join "\n", @result;
