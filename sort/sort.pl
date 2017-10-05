@@ -62,9 +62,9 @@ if ($k) {
 		my @buf = split ' ', $_;
 		$columns{$_} = $buf[$k - 1];
 	}
-	for (values %columns){
-		die "sort: invalid number at field start:!" if $_ eq undef;
-	}
+	# for (values %columns){
+	# 	die "sort: invalid number at field start:!" if $_ eq undef;
+	# }
 	delete $compare{compare_nums_rev};
 	delete $compare{compare_str_rev};
 	delete $compare{compare_nums_def};
