@@ -6,7 +6,6 @@ no warnings 'numeric';
 use DDP;
 use Getopt::Long;
 use List::Util qw(uniqnum uniqstr);
-use Array::Compare;
 my ($k, $n, $r, $u, $b_, $c, $h, $M);
 
 GetOptions ('k=s' => \$k, 'n' => \$n, 'r' => \$r, 'u' => \$u, 'b' => \$b_,
@@ -276,8 +275,6 @@ $compare = $comp___;
 if ($b_) {
 	$compare = $b_compare;
 }
-
-my $cmp = Array::Compare->new;
 
 if ($c) {
 	for my $i(0..@data - 2) {
