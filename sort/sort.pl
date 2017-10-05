@@ -113,6 +113,7 @@ if ($u) {
 	}
 }
 
+#p %compare;
 die "filters do not work!" if keys %compare != 1;
 
 my $comp = (values %compare)[0];
@@ -280,10 +281,9 @@ my $cmp = Array::Compare->new;
 
 if ($c) {
 	for my $i(0..@data - 2) {
-		my @sorted = sort $compare ($data[$i],$data[$i + 1]);
-		my @buf =($data[$i],$data[$i + 1]);
+		my $sorted = $compare -> ($data[$i],$data[$i + 1]);
 		my $pos = $i + 2;
-		unless ($cmp->compare(\@buf  ,\@sorted)) {
+		if ($sorted >= 0) {
 			say "sort: -:$pos: disorder: $data[$i+1]";
 			exit;
  		}
