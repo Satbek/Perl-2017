@@ -3,8 +3,7 @@ package DeepClone;
 
 use 5.016;
 use warnings;
-
-=encoding UTF8
+no if ($] >= 5.018), 'warnings' => 'experimental';
 
 =head1 SYNOPSIS
 
@@ -34,14 +33,35 @@ use warnings;
 
 =cut
 
-sub clone {
+sub clone($;$);
+sub clone($;$) {
 	my $orig = shift;
+	my $refs = shift || {};
 	my $cloned;
-
-	# ...
-	# deep clone algorithm here
-	# ...
-
+	given(ref $orig) {
+		when("") { $cloned = $orig; }
+		when("ARRAY") {
+			$cloned = [];
+			if (exists $refs->{$orig}) {
+				$cloned = $refs->{$orig};
+			}
+			else {
+				$refs->{$orig} = $cloned;
+				push @{$cloned}, clone($_, $refs) for (@{$orig});
+			}
+		}
+		when("HASH") {
+			$cloned = {};
+			if (exists $refs->{$orig}) {
+				$cloned = $refs->{$orig};
+			}
+			else {
+				$refs->{$orig} = $cloned;
+				$cloned->{$_} = clone($orig->{$_}, $refs) for (keys %{$orig});
+			}
+		}
+		default { die "incorrect struct!" }
+	}
 	return $cloned;
 }
 
