@@ -8,8 +8,8 @@ use Getopt::Long;
 use List::Util qw(uniqnum uniqstr);
 my ($k, $n, $r, $u, $b_, $c, $h, $M);
 
-GetOptions ('k=s' => \$k, 'n' => \$n, 'r' => \$r, 'u' => \$u, 'b' => \$b_,
-			'c' => \$c, 'M' => \$M, 'h' => \$h);
+GetOptions ('k=i' => \&k_handler, 'n' => \$n, 'r' => \$r, 'u' => \$u, 'b' => \$b_,
+			'c' => \$c, 'M' => \$M, 'h' => \$h) or die("Error in command line arguments\n");
 
 die "can't set M and h together!" if defined $M && defined $h;
 
@@ -19,6 +19,12 @@ if ($h) {
 	$n = 1;#for default sort
 }
 
+
+sub k_handler{
+	my ($opt_name, $opt_value) = @_;
+	$k = $opt_value;
+	die "only natural k" unless $k > 0;
+}
 =task
 Основное
 Поддержать ключи
@@ -57,7 +63,6 @@ while (my $line = <STDIN>) {
 
 
 if ($k) {
-	die "incorrect k" if $k != int ($k);
 	for (@data) {
 		my @buf = split ' ', $_;
 		$columns{$_} = $buf[$k - 1];
