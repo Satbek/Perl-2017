@@ -3,6 +3,10 @@ package Anagram;
 
 use 5.016;
 use warnings;
+use Encode qw(decode encode);
+use DDP;
+use utf8;
+binmode(STDOUT,':utf8');
 
 =encoding UTF8
 
@@ -39,14 +43,30 @@ anagram(['пятак', 'ЛиСток', 'пятка', 'стул', 'ПяТаК', '
 
 =cut
 
+sub get_key($) {
+	return join '', sort split("",fc shift);
+}
+
 sub anagram {
 	my $words_list = shift;
 	my %result;
-	
-	#
-	# Поиск анаграмм
-	#
-	
+	for my $word (@{$words_list}) {
+		$word = fc($word);
+		my $key = get_key($word);
+		$result{$key} //= [];
+		push @{$result{$key}}, $word;
+	}
+	for my $key(keys %result) {
+		my %seen;
+		$result{$key} = [ grep {!$seen{$_}++} @{$result{$key}} ];
+		my $new_key = $result{$key}->[0];
+		$result{$new_key} = [@{$result{$key}}];
+		delete $result{$new_key} if @{$result{$new_key}} == 1;
+		delete $result{$key};
+	}
+	for (keys %result) {
+		die if @{$result{$_}} == 1;
+	}
 	return \%result;
 }
 
