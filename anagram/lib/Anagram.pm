@@ -49,20 +49,20 @@ sub get_key($) {
 
 sub anagram {
 	my $words_list = shift;
+	my %buf_hash;
 	my %result;
 	for my $word (@{$words_list}) {
 		$word = fc($word);
 		my $key = get_key($word);
-		$result{$key} //= [];
-		push @{$result{$key}}, $word;
+		$buf_hash{$key} //= [];
+		push @{$buf_hash{$key}}, $word;
 	}
-	for my $key(keys %result) {
+	for my $key(keys %buf_hash) {
 		my %seen;
-		$result{$key} = [ grep {!$seen{$_}++} @{$result{$key}} ];
-		my $new_key = $result{$key}->[0];
-		$result{$new_key} = $result{$key};
+		$buf_hash{$key} = [ grep {!$seen{$_}++} @{$buf_hash{$key}} ];
+		my $new_key = $buf_hash{$key}->[0];
+		$result{$new_key} = $buf_hash{$key};
 		delete $result{$new_key} if @{$result{$new_key}} == 1;
-		delete $result{$key};
 	}
 	return \%result;
 }
