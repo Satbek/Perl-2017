@@ -60,7 +60,7 @@ sub anagram {
 		my %seen;
 		$result{$key} = [ grep {!$seen{$_}++} @{$result{$key}} ];
 		my $new_key = $result{$key}->[0];
-		$result{$new_key} = [@{$result{$key}}];
+		$result{$new_key} = $result{$key};
 		delete $result{$new_key} if @{$result{$new_key}} == 1;
 		delete $result{$key};
 	}
