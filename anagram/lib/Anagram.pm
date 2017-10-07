@@ -64,9 +64,6 @@ sub anagram {
 		delete $result{$new_key} if @{$result{$new_key}} == 1;
 		delete $result{$key};
 	}
-	for (keys %result) {
-		die if @{$result{$_}} == 1;
-	}
 	return \%result;
 }
 
