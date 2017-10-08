@@ -55,12 +55,8 @@ $compare{compare_nums_def_k} = sub($$) {($a, $b) = @_; $columns{$a} <=> $columns
 $compare{compare_str_rev_k} = sub($$) {($a, $b) = @_; fc($columns{$a}) cmp fc($columns{$b})};
 $compare{compare_nums_rev_k} = sub($$) {($a, $b) = @_; $columns{$a} <=> $columns{$b}};
 
-my @data;
-while (my $line = <STDIN>) {
-	chomp($line);
-	push @data, $line;
-}
-
+my @data = <>;
+chomp $_ for @data;
 
 if ($k) {
 	for (@data) {
@@ -108,15 +104,6 @@ else {
 	delete $compare{compare_nums_rev_k};
 }
 
-if ($u) {
-	if ($n) {
-		@data = uniqnum @data;
-	}
-	else {
-		@data = uniqstr @data;
-	}
-}
-
 #p %compare;
 die "filters do not work!" if keys %compare != 1;
 
@@ -151,8 +138,8 @@ my $M_compare = sub($$) {
 		if ($r) {
 			return -1;
 		}
-			else {
-		return 1;
+		else {
+			return 1;
 		}
 	}
 	elsif (exists $months{$_b} && !exists $months{$_a}) {
@@ -173,12 +160,12 @@ my $M_compare = sub($$) {
 	}
 };
 
-my $comp_ = $comp;
+my $compM = $comp;
 if ($M) {
-	$comp_ = $M_compare;
+	$compM = $M_compare;
 }
 
-my $comp__ = $comp_;
+#my $comp__ = $compM;
 
 
 my %blocks = (
@@ -257,13 +244,13 @@ my $h_compare = sub($$) {
 		}
 	}
 	elsif (!defined $d_a && !defined $sig_a && !defined $d_b && !defined $sig_b) {
-		return $comp__->($a, $b);
+		return $compM->($a, $b);
 	}
 };
 
-my $comp___ = $comp__;
+my $compMh = $compM;
 if ($h) {
-	$comp___ = $h_compare;
+	$compMh = $h_compare;
 }
 
 my $b_compare = sub($$) {
@@ -272,11 +259,11 @@ my $b_compare = sub($$) {
 	my $first = $1;
 	$b =~ /(.*?)\s*$/;
 	my $second = $1;
-	return $comp___->($first, $second);
+	return $compMh->($first, $second);
 };
 
 my $compare;
-$compare = $comp___;
+$compare = $compMh;
 if ($b_) {
 	$compare = $b_compare;
 }
@@ -293,6 +280,12 @@ if ($c) {
 }
 
 my @result = sort $compare @data;
-
+if ($u) {
+	my @buf;
+	for my $i(1..$#result + 1) {
+		push @buf, $result[$i - 1] if $compare->($result[$i],$result[$i - 1]);
+	}
+	@result = @buf;
+}
 #p @result;
 say join "\n", @result;
