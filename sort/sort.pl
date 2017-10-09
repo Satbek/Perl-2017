@@ -192,7 +192,7 @@ if ($c) {
 	for my $i(0..@data - 2) {
 		my $sorted = $compare -> ($data[$i],$data[$i + 1]);
 		my $pos = $i + 2;
-		if ($sorted >= 0) {
+		if ($sorted > 0) {
 			say "sort: -:$pos: disorder: $data[$i+1]"; 		
 			exit;
 		}
