@@ -40,16 +40,6 @@ sub k_handler{
 my %compare;
 my %columns;
 
-$compare{compare_str_def} = sub($$) {($a, $b) = @_; fc($a) cmp fc($b)};
-$compare{compare_nums_def} = sub($$) {($a, $b) = @_; $a <=> $b};
-$compare{compare_str_rev} = sub($$) {($a, $b) = @_; fc($b) cmp fc($a)};
-$compare{compare_nums_rev} = sub($$) {($a, $b) = @_; $b <=> $a};
-
-$compare{compare_str_def_k} = sub($$) {($a, $b) = @_; fc($columns{$a}) cmp fc($columns{$b})};
-$compare{compare_nums_def_k} = sub($$) {($a, $b) = @_; $columns{$a} <=> $columns{$b}};
-$compare{compare_str_rev_k} = sub($$) {($a, $b) = @_; fc($columns{$a}) cmp fc($columns{$b})};
-$compare{compare_nums_rev_k} = sub($$) {($a, $b) = @_; $columns{$a} <=> $columns{$b}};
-
 my @data = <>;
 chomp $_ for @data;
 
