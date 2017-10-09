@@ -137,6 +137,12 @@ my %blocks = (
 	'YiB' => 16,
 );
 
+
+if ($r) {
+	my $modify = sub { my ($var1, $var2) = @_; return [$var2, $var1] };
+	$compare = decorator($compare, $modify);
+}
+
 if ($h) {
 	my $modify = sub {
 		my ($var1, $var2) = @_;
@@ -181,29 +187,13 @@ if ($k) {
 	$compare = decorator($compare, $modify);
 }
 
-if ($r) {
-	my $modify = sub { my ($var1, $var2) = @_; return [$var2, $var1] };
-	$compare = decorator($compare, $modify);
-}
-
-if ($b_) {
-	my $modify = sub($$) {
-		my ($var1, $var2) = @_;
-		$a =~ /(.*?)\s*$/;
-		my $first = $1;
-		$b =~ /(.*?)\s*$/;
-		my $second = $1;
-		return [$first, $second];
-	};
-	$compare = decorator($compare, $modify);
-}
 
 if ($c) {
 	for my $i(0..@data - 2) {
 		my $sorted = $compare -> ($data[$i],$data[$i + 1]);
 		my $pos = $i + 2;
-		if ($sorted >= 0) {
-			say "sort: -:$pos: disorder: $data[$i+1]"; 		
+		if ($sorted > 0) {
+			say "sort: -:$pos: disorder: $data[$i+1]";
 			exit;
 		}
 	}
