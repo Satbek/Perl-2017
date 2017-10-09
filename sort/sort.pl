@@ -242,7 +242,6 @@ if ($c) {
 			exit;
  		}
 	}
-	say "sorted";
 	exit;
 }
 
