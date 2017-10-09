@@ -1,8 +1,4 @@
-JUN
-JUL
-AUG
-OCT
-SEP
-NOV
-DEC
-JAN
+1Y
+1ZB
+1M
+1k

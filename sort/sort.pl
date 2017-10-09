@@ -40,97 +40,73 @@ sub k_handler{
 my %compare;
 my %columns;
 
+$compare{compare_str_def} = sub($$) {($a, $b) = @_; fc($a) cmp fc($b)};
+$compare{compare_nums_def} = sub($$) {($a, $b) = @_; $a <=> $b};
+$compare{compare_str_rev} = sub($$) {($a, $b) = @_; fc($b) cmp fc($a)};
+$compare{compare_nums_rev} = sub($$) {($a, $b) = @_; $b <=> $a};
+
+$compare{compare_str_def_k} = sub($$) {($a, $b) = @_; fc($columns{$a}) cmp fc($columns{$b})};
+$compare{compare_nums_def_k} = sub($$) {($a, $b) = @_; $columns{$a} <=> $columns{$b}};
+$compare{compare_str_rev_k} = sub($$) {($a, $b) = @_; fc($columns{$a}) cmp fc($columns{$b})};
+$compare{compare_nums_rev_k} = sub($$) {($a, $b) = @_; $columns{$a} <=> $columns{$b}};
+
 my @data = <>;
 chomp $_ for @data;
 
 
-my $default_compare;
+my $compare;
 
 if ($n || $h) {
-	$default_compare = sub($$) {($a, $b) = @_; $a <=> $b};
+	$compare = sub($$) {($a, $b) = @_; $a <=> $b};
 }
 else {
-	$default_compare = sub($$) {($a, $b) = @_; fc($a) cmp fc($b)};
+	$compare = sub($$) {($a, $b) = @_; fc($a) cmp fc($b)};
 }
 
 sub decorator {
-	my ($default_compare, $modify) = @_;
+	my ($compare, $modify) = @_;
 	return sub($$) {
 		($a, $b) = @_;
 		my @modify = @{$modify->($a,$b)};
-		$default_compare->($modify[0], $modify[1]);
+		return $compare->($modify[0], $modify[1]);
 	};
 }
 
-if ($k) {
-	for (@data) {
-		my @buf = split ' ', $_;
-		$columns{$_} = $buf[$k - 1];
-	}
-	my $modify = sub { my ($var1, $var2) = @_; return [$columns{$var1}, $columns{$var2}]; };
-	$default_compare = decorator($default_compare, $modify);
-}
-
-if ($r) {
-	my $modify = sub { my ($var1, $var2) = @_; return [$var2, $var1] };
-	$default_compare = decorator($default_compare, $modify);
-}
-
 my %months = (
-	'JAN' => 1,
-	'FEB' => 2,
-	'MAR' => 3,
-	'APR' => 4,
-	'MAY' => 5,
-	'JUN' => 6,
-	'JUL' => 7,
-	'AUG' => 8,
-	'SEP' => 9,
-	'OCT' => 10,
-	'NOV' => 11,
-	'DEC' => 12,
-	'NOT_MONTH' => 0,
+	'JAN' => '01',
+	'FEB' => '02',
+	'MAR' => '03',
+	'APR' => '04',
+	'MAY' => '05',
+	'JUN' => '06',
+	'JUL' => '07',
+	'AUG' => '08',
+	'SEP' => '09',
+	'OCT' => '10',
+	'NOV' => '11',
+	'DEC' => '12',
 );
 
-
-my $M_compare = sub($$) {
-	($a, $b) = @_;
-	my ($_a, $_b) = ($a, $b);
-	if ($k) {
-		($_a, $_b) = ($columns{$a}, $columns{$b});
-	}
-	if (!exists $months{$_a} && !exists $months{$_b}) {
-		return $default_compare->($a,$b);
-	}
-	elsif (exists $months{$_a} && !exists $months{$_b}) {
-		if ($r) {
-			return -1;
-		}
-		else {
-			return 1;
-		}
-	}
-	elsif (exists $months{$_b} && !exists $months{$_a}) {
-		if ($r) {
-			return 1;
-		}
-		else {
-			return -1;
-		}
-	}
-	elsif (exists $months{$_b} && exists $months{$_a}) {
-		if ($r) {
-			return $months{$_b} <=> $months{$_a};
-		}
-		else {
-			return $months{$_a} <=> $months{$_b};
-		}
-	}
-};
-
-my $compM = $default_compare;
 if ($M) {
-	$compM = $M_compare;
+	my $modify = sub {
+		my ($var1, $var2) = @_;
+		my $arr;
+		if (!exists $months{$var1} && !exists $months{$var2}) {
+			return [$var1, $var2];
+		}
+		elsif (exists $months{$var1} && !exists $months{$var2}) {
+			$months{$var2} = 0;
+			return [$months{$var1}, $months{$var2} ];
+		}
+		elsif (!exists $months{$var1} && exists $months{$var2}) {
+			$months{$var1} = 0;
+			return [$months{$var1} , $months{$var2}];
+		}
+		elsif (exists $months{$var1} && exists $months{$var2}) {
+			return [$months{$var1}, $months{$var2}];
+		}
+	}; 
+	$compare = decorator($compare, $modify);
 }
 
 my %blocks = (
@@ -161,76 +137,53 @@ my %blocks = (
 	'YiB' => 16,
 );
 
-my $h_compare = sub($$) {
-	($a, $b) = @_;
-	my ($d_a, $sig_a, $d_b, $sig_b);
-	for (keys %blocks) {
-		if ($a =~ /(\d+)($_)/) {
-			$d_a = $1; 
-			$sig_a = $2;
-		}
-		if ($b =~ /(\d+)($_)/) {
-			$d_b = $1;
-			$sig_b = $2;
-		}
-	}
-	if (defined $d_a && defined $sig_a && defined $d_b && defined $sig_b) {
-		if ($r){
-			if (($blocks{$sig_b} <=> $blocks{$sig_a}) != 0) {
-				return $blocks{$sig_b} <=> $blocks{$sig_a};
-			}
-			else {
-				return $d_b <=> $d_a;
-			}
-		}
-		else {
-			if (($blocks{$sig_a} <=> $blocks{$sig_b}) != 0){
-				return $blocks{$sig_a} <=> $blocks{$sig_b};
-			}
-			else {
-				return $d_a <=> $d_b;
-			}
-		}
-	}
-	elsif (defined $d_a && defined $sig_a && !defined $d_b && !defined $sig_b) {
-		if ($r) {
-			return -1;
-		}
-		else {
-			return 1;
-		}
-	}
-	elsif (!defined $d_a && !defined $sig_a && defined $d_b && defined $sig_b) {
-		if ($r) {
-			return 1;
-		}
-		else {
-			return -1;
-		}
-	}
-	elsif (!defined $d_a && !defined $sig_a && !defined $d_b && !defined $sig_b) {
-		return $compM->($a, $b);
-	}
-};
-
-my $compMh = $compM;
 if ($h) {
-	$compMh = $h_compare;
+	my $modify = sub {
+		my ($var1, $var2) = @_;
+		my ($d_1, $sig_1, $d_2, $sig_2);
+		for (keys %blocks) {
+			if ($a =~ /(\d+)($_)/) {
+				$d_1 = $1; 
+				$sig_1 = $2;
+			}
+			if ($b =~ /(\d+)($_)/) {
+				$d_2 = $1;
+				$sig_2 = $2;
+			}
+		}
+		if (defined $d_1 && defined $sig_1 && defined $d_2 && defined $sig_2) {
+			if ($blocks{$sig_1} != $blocks{$sig_2}) {
+				return [$blocks{$sig_1}, $blocks{$sig_2}];
+			}
+			else {
+				return [$d_1, $d_2];
+			}
+		}
+		elsif (defined $d_1 && defined $sig_1 && !defined $d_2 && !defined $sig_2) {
+			return [$blocks{$sig_1}, 0];
+		}
+		elsif (!defined $d_1 && !defined $sig_1 && defined $d_2 && defined $sig_2) {
+			return [0, $blocks{$sig_2}];
+		}
+		elsif (!defined $d_1 && !defined $sig_1 && !defined $d_2 && !defined $sig_2) {
+			return [$var1, $var2];
+		}
+	};
+	$compare = decorator($compare, $modify);
 }
 
-my $b_compare = sub($$) {
-	($a, $b) = @_;
-	$a =~ /(.*?)\s*$/;
-	my $first = $1;
-	$b =~ /(.*?)\s*$/;
-	my $second = $1;
-	return $compMh->($first, $second);
-};
+if ($k) {
+	for (@data) {
+		my @buf = split ' ', $_;
+		$columns{$_} = $buf[$k - 1];
+	}
+	my $modify = sub { my ($var1, $var2) = @_; return [$columns{$var1}, $columns{$var2}]; };
+	$compare = decorator($compare, $modify);
+}
 
-my $compare;
-$compare = $compMh;
-if ($b_) {
-	$compare = $b_compare;
+if ($r) {
+	my $modify = sub { my ($var1, $var2) = @_; return [$var2, $var1] };
+	$compare = decorator($compare, $modify);
 }
 
 if ($c) {
@@ -238,9 +191,8 @@ if ($c) {
 		my $sorted = $compare -> ($data[$i],$data[$i + 1]);
 		my $pos = $i + 2;
 		if ($sorted >= 0) {
-			say "sort: -:$pos: disorder: $data[$i+1]";
-			exit;
- 		}
+			say "sort: -:$pos: disorder: $data[$i+1]"; 		
+		}
 	}
 	exit;
 }
@@ -253,5 +205,5 @@ if ($u) {
 	}
 	@result = @buf;
 }
-#p @result;
+
 say join "\n", @result;
