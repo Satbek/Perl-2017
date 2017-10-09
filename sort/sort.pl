@@ -5,7 +5,6 @@ no warnings "uninitialized";
 no warnings 'numeric';
 use DDP;
 use Getopt::Long;
-use List::Util qw(uniqnum uniqstr);
 my ($k, $n, $r, $u, $b_, $c, $h, $M);
 
 GetOptions ('k=i' => \&k_handler, 'n' => \$n, 'r' => \$r, 'u' => \$u, 'b' => \$b_,
@@ -15,16 +14,12 @@ die "can't set M and h together!" if defined $M && defined $h;
 
 die "can't set h and n together!" if defined $n && defined $h; 
 
-if ($h) {
-	$n = 1;#for default sort
-}
-
-
 sub k_handler{
 	my ($opt_name, $opt_value) = @_;
 	$k = $opt_value;
 	die "only natural k" unless $k > 0;
 }
+
 =task
 Основное
 Поддержать ключи
@@ -45,69 +40,41 @@ sub k_handler{
 my %compare;
 my %columns;
 
-$compare{compare_str_def} = sub($$) {($a, $b) = @_; fc($a) cmp fc($b)};
-$compare{compare_nums_def} = sub($$) {($a, $b) = @_; $a <=> $b};
-$compare{compare_str_rev} = sub($$) {($a, $b) = @_; fc($b) cmp fc($a)};
-$compare{compare_nums_rev} = sub($$) {($a, $b) = @_; $b <=> $a};
-
-$compare{compare_str_def_k} = sub($$) {($a, $b) = @_; fc($columns{$a}) cmp fc($columns{$b})};
-$compare{compare_nums_def_k} = sub($$) {($a, $b) = @_; $columns{$a} <=> $columns{$b}};
-$compare{compare_str_rev_k} = sub($$) {($a, $b) = @_; fc($columns{$a}) cmp fc($columns{$b})};
-$compare{compare_nums_rev_k} = sub($$) {($a, $b) = @_; $columns{$a} <=> $columns{$b}};
-
 my @data = <>;
 chomp $_ for @data;
+
+
+my $default_compare;
+
+if ($n || $h) {
+	$default_compare = sub($$) {($a, $b) = @_; $a <=> $b};
+}
+else {
+	$default_compare = sub($$) {($a, $b) = @_; fc($a) cmp fc($b)};
+}
+
+sub decorator {
+	my ($default_compare, $modify) = @_;
+	return sub($$) {
+		($a, $b) = @_;
+		my @modify = @{$modify->($a,$b)};
+		$default_compare->($modify[0], $modify[1]);
+	};
+}
 
 if ($k) {
 	for (@data) {
 		my @buf = split ' ', $_;
 		$columns{$_} = $buf[$k - 1];
 	}
-	# for (values %columns){
-	# 	die "sort: invalid number at field start:!" if $_ eq undef;
-	# }
-	delete $compare{compare_nums_rev};
-	delete $compare{compare_str_rev};
-	delete $compare{compare_nums_def};
-	delete $compare{compare_str_def};
-}
-else {
-	delete $compare{compare_str_def_k};
-	delete $compare{compare_nums_def_k};
-	delete $compare{compare_str_rev_k};
-	delete $compare{compare_nums_rev_k};
-}
-
-if ($n) {
-	delete $compare{compare_str_def};
-	delete $compare{compare_str_rev};
-	delete $compare{compare_str_def_k};
-	delete $compare{compare_str_rev_k};
-}
-else {
-	delete $compare{compare_nums_def};
-	delete $compare{compare_nums_rev};
-	delete $compare{compare_nums_def_k};
-	delete $compare{compare_nums_rev_k};
+	my $modify = sub { my ($var1, $var2) = @_; return [$columns{$var1}, $columns{$var2}]; };
+	$default_compare = decorator($default_compare, $modify);
 }
 
 if ($r) {
-	delete $compare{compare_str_def};
-	delete $compare{compare_nums_def};
-	delete $compare{compare_str_def_k};
-	delete $compare{compare_nums_def_k};
+	my $modify = sub { my ($var1, $var2) = @_; return [$var2, $var1] };
+	$default_compare = decorator($default_compare, $modify);
 }
-else {
-	delete $compare{compare_str_rev};
-	delete $compare{compare_nums_rev};
-	delete $compare{compare_str_rev_k};
-	delete $compare{compare_nums_rev_k};
-}
-
-#p %compare;
-die "filters do not work!" if keys %compare != 1;
-
-my $comp = (values %compare)[0];
 
 my %months = (
 	'JAN' => 1,
@@ -121,7 +88,8 @@ my %months = (
 	'SEP' => 9,
 	'OCT' => 10,
 	'NOV' => 11,
-	'DEC' => 12
+	'DEC' => 12,
+	'NOT_MONTH' => 0,
 );
 
 
@@ -132,7 +100,7 @@ my $M_compare = sub($$) {
 		($_a, $_b) = ($columns{$a}, $columns{$b});
 	}
 	if (!exists $months{$_a} && !exists $months{$_b}) {
-		return $comp->($a,$b);
+		return $default_compare->($a,$b);
 	}
 	elsif (exists $months{$_a} && !exists $months{$_b}) {
 		if ($r) {
@@ -160,13 +128,10 @@ my $M_compare = sub($$) {
 	}
 };
 
-my $compM = $comp;
+my $compM = $default_compare;
 if ($M) {
 	$compM = $M_compare;
 }
-
-#my $comp__ = $compM;
-
 
 my %blocks = (
 	'kB' => 1,
@@ -277,6 +242,8 @@ if ($c) {
 			exit;
  		}
 	}
+	say "sorted";
+	exit;
 }
 
 my @result = sort $compare @data;
