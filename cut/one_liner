@@ -1,0 +1,1 @@
+cat input.txt|perl -asnl -E 'BEGIN{@nums=sort map{$_-=1} map{s/-/../;eval qq[$_]} split/,/,$f;$d="\t" unless $d; $d=$"=eval qq["$d"];} @F=split/$d/;next if !/$d/ && $s;for (@nums) {push @res, $F[$_] if $F[$_] }; print "@res";@F=@res=()' -- -f=1-2,5-6
