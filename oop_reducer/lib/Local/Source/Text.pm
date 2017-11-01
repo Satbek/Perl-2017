@@ -1,4 +1,4 @@
-package Text;
+package Local::Source::Text;
 use 5.016;
 use warnings;
 use DDP;
