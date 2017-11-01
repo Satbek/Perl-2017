@@ -36,6 +36,7 @@ sub reduce {
 	my $row = $self->{source}->next; 
 	if ($row) {
 		#...
+		return "success";
 	}
 	else { return undef }
 }
