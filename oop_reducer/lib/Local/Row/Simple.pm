@@ -1,16 +1,17 @@
-package Simple;
+package Local::Row::Simple;
 use 5.016;
 use warnings;
 use DDP;
 sub new {
-	my ($self, $str) = @_;
+	my ($self, %data) = @_;
+	my $str = $data{str};
 	my @pairs;
-	return undef unless $str;
+	return {} unless $str;
 	push @pairs, $str =~ /^([^,]*)$/ if $str =~ /^([^,]*)$/;
 	push @pairs, $str =~ /([^,]*),/ if $str =~ /([^,]*),/;
 	push @pairs, $str =~ /,([^,]*)/g if $str =~ /,([^,]*)/;
-	my %data = map {/^(?<key>[^:,]*):(?<value>[^,:]*)$/ ? ( $+{key} => $+{value} ) : return undef } @pairs;
-	return bless \%data; 
+	my %res = map {/^(?<key>[^:,]*):(?<value>[^,:]*)$/ ? ( $+{key} => $+{value} ) : return undef } @pairs;
+	return bless \%res; 
 }
 
 sub get {
