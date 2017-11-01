@@ -2,7 +2,7 @@ package Local::Reducer;
 use 5.016;
 use strict;
 use warnings;
-
+use DDP;
 =encoding utf8
 
 =head1 NAME
@@ -50,12 +50,12 @@ sub reduce_n {
 
 sub reduce_all {
 	my $self = shift;
-	while (1) { last unless $self->reduce() }
+	while ($self->reduce()) {}
 	return $self->reduced;
 }
 
 sub reduced {
-	my $self = @_;
+	my $self = shift;
 	return $self->{reduced};
 }
 

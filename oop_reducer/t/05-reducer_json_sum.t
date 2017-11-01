@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use FindBin; use lib "$FindBin::Bin/../lib";
 use Test::More;
-
+use DDP;
 use Local::Reducer::Sum;
 use Local::Source::Array;
 use Local::Row::JSON;
