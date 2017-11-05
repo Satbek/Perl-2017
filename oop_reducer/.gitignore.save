@@ -1,0 +1,9 @@
+.shar
+	.tar_uu
+	MYMETA.json
+	MYMETA.yml
+	Makefile
+	blib/
+pm_to_blib
+
+lib.my
