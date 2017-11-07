@@ -3,8 +3,10 @@ use 5.016;
 use warnings;
 use DDP;
 use Sys::Hostname;
+use List::Util qw/maxstr max/;
 #cd/pwd/echo/kill/ps
 $|++;
+
 say "hello, it's my shell!";
 
 sub get_prefix {
@@ -25,6 +27,32 @@ sub get_proc_info {
 	$proc_info{pid} = $stat_info[0];
 	$proc_info{ppid} = $stat_info[3];
 	return \%proc_info;
+}
+
+
+sub ps {
+	opendir(my $dh, '/proc') or die $!;
+	my @processes;
+	while(my $proc = readdir $dh){
+		if ($proc =~ /^\d+$/) {
+			push @processes, get_proc_info($proc);
+		}
+	}
+	p @processes;
+	my $max_name_length = max map { length $_->{name} } @processes;
+	$max_name_length = $max_name_length > length "CMD" ? $max_name_length : length "CMD";
+	my $max_pid_length = max map { length $_->{pid} } @processes;
+	$max_pid_length = $max_pid_length > length "CMD" ? $max_pid_length : length "PID";
+	my $max_ppid_length = max map { length $_->{ppid} } @processes;
+	$max_ppid_length = $max_ppid_length > length "CMD" ? $max_ppid_length : length "PID";
+	print " " x ($max_pid_length - length("PID"))."PID ";
+	print " " x ($max_pid_length - length("PPID"))."PPID ";
+	print " " x ($max_name_length -length("CMD"))."CMD\n";
+	for (@processes) {
+		print " " x ($max_pid_length - length($_->{pid}))."$_->{pid} ";
+		print " " x ($max_pid_length - length($_->{ppid}))."$_->{ppid} ";
+		print " " x ($max_name_length -length($_->{name}))."$_->{name}\n";
+	}
 }
 
 sub change_dir {
@@ -63,14 +91,11 @@ sub process_build_in_command {
 		return 1;
 	}
 	elsif ($command =~ /^\s*ps\s*$/) {
-		my $self = get_proc_info($$);
-		p $self;
-		
+		ps;
 		return 1;
 	}
 	return 0;
 }
-
 
 sub exec_command_in_child {
 	my $command = shift;
@@ -84,14 +109,14 @@ sub exec_command_in_child {
 		close $child_rdr;
 		close $child_wdr;
 		open (STDOUT, ">&=".fileno($parent_wdr)) or die $!;
-		open (STDIN, "<&=".fileno($parent_rdr)) or die $! ;
+		open (STDIN, "<&=".fileno($parent_rdr)) or die $!;
 		$command =~ s/^\s*(.*)\s*$/$1/;
 		{
 			no warnings;
 			for my $path (split ":", $ENV{PATH}) {
 				eval { exec "$path/$command" };
 			}
-			print "no such command: $command\n";
+			print "$command: command not found\n";
 		}
 		close $parent_rdr;
 		close $parent_wdr;
