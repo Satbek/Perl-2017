@@ -12,8 +12,8 @@ say "hello, it's my shell!";
 sub get_prefix {
 	my $host = hostname;
 	my $current_dir = readlink "/proc/$$/cwd";
-	$current_dir =~ s/^$ENV{HOME}//;
-	return "$ENV{USER}\@$host:~$current_dir\$ ";
+	$current_dir =~ s/^$ENV{HOME}/~/;
+	return "$ENV{USER}\@$host:$current_dir\$ ";
 }
 
 sub get_proc_info {
