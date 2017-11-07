@@ -3,7 +3,7 @@ use 5.016;
 use warnings;
 use DDP;
 use Sys::Hostname;
-use List::Util qw/maxstr max/;
+use List::Util qw/any max/;
 #cd/pwd/echo/kill/ps
 $|++;
 
@@ -18,27 +18,33 @@ sub get_prefix {
 
 sub get_proc_info {
 	my $pid = shift;
-	open (my $fd, '<', "/proc/$pid/stat") or die $!;
-	my $stat = <$fd>;
-	my @stat_info = split ' ', $stat;
+	open (my $fd, '<', "/proc/$pid/status") or die $!;
+	my @stat_info = <$fd>;
 	my %proc_info;
-	$stat_info[1] =~ s/\((.+)\)/$1/;
-	$proc_info{name} = $stat_info[1];
-	$proc_info{pid} = $stat_info[0];
-	$proc_info{ppid} = $stat_info[3];
+	for (@stat_info) {
+		if ($_ =~ /^Name:\s+(?<name>.+)$/) {
+			#$_ =~ s/^\((.*)\)$/$1/;
+			$proc_info{name} = $+{name};
+		}
+		if ($_ =~ /^Pid:\s+(?<pid>\d+)$/) {
+			$proc_info{pid} = $+{pid};
+		}
+		if ($_ =~ /^PPid:\s+(?<ppid>\d+)$/) {
+			$proc_info{ppid} = $+{ppid};
+		}
+	}
 	return \%proc_info;
 }
-
 
 sub ps {
 	opendir(my $dh, '/proc') or die $!;
 	my @processes;
+#	get_proc_info($$);
 	while(my $proc = readdir $dh){
 		if ($proc =~ /^\d+$/) {
 			push @processes, get_proc_info($proc);
 		}
 	}
-	p @processes;
 	my $max_name_length = max map { length $_->{name} } @processes;
 	$max_name_length = $max_name_length > length "CMD" ? $max_name_length : length "CMD";
 	my $max_pid_length = max map { length $_->{pid} } @processes;
@@ -65,36 +71,44 @@ sub change_dir {
 	};
 }
 
+my @build_in_commands = qw/echo pwd kill ps cd/;
+
+sub is_build_in_command {
+	my $command = shift;
+	$command =~ s/^\s*(.*)\s*$/$1/;
+	$command =~ /^(\w+)/;
+	my $command_name = $1;
+	return any { $_ eq $command_name } @build_in_commands;
+}
+
 sub process_build_in_command {
 	my $command = shift;
 	my $buffer = shift;
-	if ($command =~ /^echo\s*(?:(?<=\s)(?<arg>[^\s]+))?$/) {
+	if ($command =~ /^echo\s*(?:(?<=\s)(?<arg>[^\s].*))?$/) {
 		my $arg = $+{arg};
 		$arg ||= "";
-		if ($arg =~ /^\$/) {	
-			my $env_arg = substr $arg, 1;
-			$arg = $ENV{$env_arg} if exists $ENV{$env_arg};
+		my @env_vars;
+		push @env_vars, $arg =~ /\$(\w+)/g;
+		for (@env_vars) {
+			$arg =~ s/\$$_/$ENV{$_}/ if exists $ENV{$_};
 		}
 		push  @{$buffer}, $arg."\n";
-		return 1;
 	}
 	elsif ($command =~ /^cd\s*(?:(?<=\s)(?<path>[^\s]+))?$/) {
 		change_dir($+{path});
-		return 1;
+
 	}
 	elsif ($command =~ /^\s*pwd\s*$/) {
 		push @{$buffer}, readlink "/proc/$$/cwd","\n";
-		return 1;
+
 	}
-	elsif ($command =~ /^\s*kill\s+(\d+)\s*$/){
-		kill 'KILL', $1;
-		return 1;
+	elsif ($command =~ /\s*kill(?:\s+(?<arg>\w+|-\d+))?\s+(?<pid>\d+)/){
+		my $sig = $+{arg} ? $+{arg} : "KILL";
+		kill $sig, $+{pid}; 
 	}
 	elsif ($command =~ /^\s*ps\s*$/) {
 		ps;
-		return 1;
 	}
-	return 0;
 }
 
 sub exec_command_in_child {
@@ -111,12 +125,10 @@ sub exec_command_in_child {
 		open (STDOUT, ">&=".fileno($parent_wdr)) or die $!;
 		open (STDIN, "<&=".fileno($parent_rdr)) or die $!;
 		$command =~ s/^\s*(.*)\s*$/$1/;
-		{
-			no warnings;
-			for my $path (split ":", $ENV{PATH}) {
-				eval { exec "$path/$command" };
-			}
-			print "$command: command not found\n";
+		$command =~ /^(\w+)/;
+		my $command_name = $1;
+		for my $path (split ":", $ENV{PATH}) {
+			exec "$path/$command" if -x "$path/$command_name";
 		}
 		close $parent_rdr;
 		close $parent_wdr;
@@ -148,7 +160,8 @@ while(<>) {
 	my ($read, $write);
 	my @buffer;
 	for my $command (@commands) {
-		exec_command_in_child($command, \@buffer) unless process_build_in_command($command, \@buffer);
+		is_build_in_command($command) ? process_build_in_command($command, \@buffer)
+									:	exec_command_in_child($command, \@buffer);
 	}
 	for (@buffer) {
 		print $_;
