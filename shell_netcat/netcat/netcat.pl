@@ -3,6 +3,8 @@ use 5.016;
 use warnings;
 use DDP;
 use IO::Socket;
+$|++;
+
 my ($ip, $port, $proto) = @ARGV;
 unless (defined $proto) {
 	$proto = "tcp";
@@ -14,7 +16,7 @@ my $socket = IO::Socket::INET->new(
 	Proto => $proto) or die "Can't connect to $ip $!";
 
 my $pid;
-$|++;
+
 if (!($pid = fork)) {
 	while (<$socket>) {
 		print $_;
