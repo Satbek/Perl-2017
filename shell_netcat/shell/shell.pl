@@ -22,14 +22,14 @@ sub get_proc_info {
 	my @stat_info = <$fd>;
 	my %proc_info;
 	for (@stat_info) {
-		if ($_ =~ /^Name:\s+(?<name>.+)$/) {
+		if (/^Name:\s+(?<name>.+)$/) {
 			#$_ =~ s/^\((.*)\)$/$1/;
 			$proc_info{name} = $+{name};
 		}
-		if ($_ =~ /^Pid:\s+(?<pid>\d+)$/) {
+		if (/^Pid:\s+(?<pid>\d+)$/) {
 			$proc_info{pid} = $+{pid};
 		}
-		if ($_ =~ /^PPid:\s+(?<ppid>\d+)$/) {
+		if (/^PPid:\s+(?<ppid>\d+)$/) {
 			$proc_info{ppid} = $+{ppid};
 		}
 	}
@@ -75,9 +75,9 @@ my @build_in_commands = qw/echo pwd kill ps cd/;
 
 sub is_build_in_command {
 	my $command = shift;
-	$command =~ s/^\s*(.*)\s*$/$1/;
-	$command =~ /^(\w+)/;
+	$command =~ /^\s*(\w+)/;
 	my $command_name = $1;
+	no warnings 'uninitialized';
 	return any { $_ eq $command_name } @build_in_commands;
 }
 
@@ -130,6 +130,7 @@ sub exec_command_in_child {
 		for my $path (split ":", $ENV{PATH}) {
 			exec "$path/$command" if -x "$path/$command_name";
 		}
+		say "command not found: $command";
 		close $parent_rdr;
 		close $parent_wdr;
 		exit;
