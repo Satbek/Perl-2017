@@ -15,22 +15,14 @@ my $socket = IO::Socket::INET->new(
 	PeerPort => $port,
 	Proto => $proto) or die "Can't connect to $ip $!";
 
-my $pid;
-
-if (!($pid = fork)) {
-	while (<$socket>) {
-		print $_;
+while (<STDIN>) {
+	select $socket;
+	print $_;
+	select STDOUT;
+	my $ans;
+	{
+		local $/;
+		$ans = <$socket>;
 	}
-}
-elsif (! defined $pid) {
-	die "fork didn't work";
-}
-else {
-	$SIG{CHLD} = sub {
-		kill 'KILL', $pid;
-		exit;
-	};
-	while (<STDIN>) {
-		print $socket $_;
-	}
+	$ans ? print $ans : close ($socket); exit;
 }
