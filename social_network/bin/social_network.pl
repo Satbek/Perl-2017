@@ -14,7 +14,7 @@ use Getopt::Long;
 my $Model = Local::Model->new("Config.txt");
 
 my $Controller = Local::Controller->new(@ARGV);
-p $Controller;
+#p $Controller;
 $Controller->set_data($Model);
 
 my $View = Local::View->new();

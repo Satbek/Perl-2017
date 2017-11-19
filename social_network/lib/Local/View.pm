@@ -3,7 +3,6 @@ use 5.016;
 use warnings;
 use DDP;
 use JSON::XS;
-no warnings 'redefine';
 sub new {
 	return bless {};
 }
@@ -17,10 +16,17 @@ sub get_data { shift; return _get_raw_data(@_); };
 
 sub _to_json {
 	my $sub = shift;
-	return sub { encode_json($sub->(@_)) };
+	return sub {
+		my $result = $sub->(@_);
+		unless (ref $result eq "ARRAY" or ref $result eq "HASH") {
+			$result = [$result];
+		}
+		return $result;
+	};
 }
 
 sub set_data_type {
+	no warnings 'redefine';
 	shift;
 	my $decorator = shift;
 	*get_data = eval "_$decorator \\&get_data" || die $!;
