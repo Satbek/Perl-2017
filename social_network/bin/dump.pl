@@ -8,7 +8,6 @@ use DBI;
 use Encode qw(decode encode);
 binmode STDOUT, ":utf8:";
 use utf8;
-use Try::Tiny;
 my $dbh = DBI->connect("DBI:Pg:dbname=social_network;host=127.0.0.1;port=5432", 'satbek', "kocpak", 
 	{ pg_utf8_strings => 1 }) or die "Can't connect to database ".DBI->errstr;
 
