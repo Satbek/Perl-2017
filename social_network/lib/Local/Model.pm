@@ -61,6 +61,7 @@ sub _num_handshakes {
 	my @paths = (0) x 50000;
 	$paths[$user1] = 0;
 	while (@queue) {
+		#say $#queue;
 		my $node = shift @queue;
 		unless (defined $node) {
 			return undef;

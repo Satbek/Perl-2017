@@ -21,7 +21,7 @@ sub _to_json {
 		unless (ref $result eq "ARRAY" or ref $result eq "HASH") {
 			$result = [$result];
 		}
-		return $result;
+		return encode_json $result;
 	};
 }
 
