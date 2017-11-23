@@ -4,19 +4,23 @@ use warnings;
 use DBI;
 use JSON::XS;
 use DDP;
+use Cache::Memcached::Fast;
 
-my $dbh;
 sub new {
-	shift;
+	my $class = shift;
 	my $self = {};
 	my $config = shift;
 	open(my $fd, "<", "../Config/$config") or die $!;
-	my %config = %{decode_json (<$fd>)};
+	my %config_db = %{decode_json (<$fd>)};
+	my $config_mem = decode_json (<$fd>);
 	close($fd);
-	$dbh = DBI->connect("$config{dsn};host=$config{host};port=$config{port}", $config{user}, $config{password})
+	my $dbh = DBI->connect("$config_db{dsn};host=$config_db{host};port=$config_db{port}", $config_db{user}, $config_db{password})
 			or die "Can't connect to database ".DBI->errstr;
+	my $mem = Cache::Memcached::Fast->new($config_mem);
 	$self->{data} = "";
-	return bless $self;
+	$self->{dbh} = $dbh;
+	$self->{mem} = $mem;
+	return bless $self, $class;
 }
 
 sub get_data {
@@ -25,10 +29,10 @@ sub get_data {
 }
 
 sub _friends {
-	my ($user1, $user2) = @_;
+	my ($self, $user1, $user2) = @_;
 	$user1 += 0;
 	$user2 += 0;
-	my $sth = $dbh->prepare(
+	my $sth = $self->{dbh}->prepare(
 		"select name, surname, id from (
 			select id2 from (
 				select id2 as id2_ from users_relations where id1 = ?
@@ -42,7 +46,8 @@ sub _friends {
 }
 
 sub _nofriends {
-	my $sth = $dbh->prepare(
+	my $self = shift;
+	my $sth = $self->{dbh}->prepare(
 		"select name, surname, id from users join (
 			select id as id_ from (
 				users as us left join users_relations as us_rel on us.id = us_rel.id1
@@ -54,14 +59,14 @@ sub _nofriends {
 }
 
 sub _num_handshakes {
-	my ($user1, $user2) = @_;
-	my @queue;
+	my ($self, $user1, $user2) = @_;
+	my (@queue, @paths, @parents, @visited);
 	push @queue, $user1;
-	my @visited = (0) x 50000;
-	my $sth = $dbh->prepare("select id2 from users_relations where id1 = ?");
-	my @parents = (0) x 50000;
-	my @paths = (0) x 50000;
+	my $sth = $self->{dbh}->prepare("select id2 from users_relations where id1 = ?");
 	$paths[$user1] = 0;
+	if (my $count = $self->{mem}->get("$user1.$user2") ||  $self->{mem}->get("$user2.$user1")) {
+	 	return $count;
+	}
 	while (@queue) {
 		#say $#queue;
 		my $node = shift @queue;
@@ -80,6 +85,7 @@ sub _num_handshakes {
 				$visited[$child]++;
 				$parents[$child] = $node;
 				$paths[$child] = $paths[$node] + 1;
+				$self->{mem}->set("$user1.$child", $paths[$child]);
 			}
 		}
 	}
@@ -91,8 +97,7 @@ sub _num_handshakes {
 		path_length => scalar @path,
 		path => \@path,
 	);
-	return $res{path_length}; 
-	
+	return $paths[$user2];
 }
 
 sub set_data {
@@ -100,7 +105,7 @@ sub set_data {
 	die if $self->{data};
 	my ($method, @args) = @_;
 	local $" = ',';
-	$self->{data} = eval "_$method @args" || die $!;
+	$self->{data} = eval "_$method ".'$self,'."@args" || die $!;
 }
 
 sub erase_data {
