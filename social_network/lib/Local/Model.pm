@@ -5,21 +5,23 @@ use DBI;
 use JSON::XS;
 use DDP;
 
-my $data;
 my $dbh;
 sub new {
 	shift;
+	my $self = {};
 	my $config = shift;
 	open(my $fd, "<", "../Config/$config") or die $!;
 	my %config = %{decode_json (<$fd>)};
 	close($fd);
 	$dbh = DBI->connect("$config{dsn};host=$config{host};port=$config{port}", $config{user}, $config{password})
 			or die "Can't connect to database ".DBI->errstr;
-	return bless {};
+	$self->{data} = "";
+	return bless $self;
 }
 
 sub get_data {
-	return $data;
+	my $self = shift;
+	return $self->{data};
 }
 
 sub _friends {
@@ -94,15 +96,16 @@ sub _num_handshakes {
 }
 
 sub set_data {
-	die if $data;
-	shift;
+	my $self = shift;
+	die if $self->{data};
 	my ($method, @args) = @_;
 	local $" = ',';
-	$data = eval "_$method @args" || die $!;
+	$self->{data} = eval "_$method @args" || die $!;
 }
 
 sub erase_data {
-	$data = undef;
+	my $self = shift;
+	$self->{data} = undef;
 }
 
 1;
