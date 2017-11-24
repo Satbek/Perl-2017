@@ -55,10 +55,10 @@ sub _nofriends {
 
 sub _num_handshakes {
 	my ($self, $user1, $user2) = @_;
-	my (@queue, @paths, @parents, @visited);
+	my (@queue, %paths, %parents, %visited);
 	push @queue, $user1;
 	my $sth = $self->{dbh}->prepare("select * from users_relations where id1 = ? or id2 = ?");
-	$paths[$user1] = 0;
+	$paths{$user1} = 0;
 	if (my $count = $self->{mem}->get("$user1.$user2") ||  $self->{mem}->get("$user2.$user1")) {
 	 	return $count;
 	}
@@ -69,30 +69,30 @@ sub _num_handshakes {
 			return undef;
 		}
 		if ($node == $user2) {
-			$visited[$node]++;
+			$visited{$node}++;
 			last;
 		}
 		$sth->execute($node, $node);
 		my @arr = grep { $_ != $node } map { $_ = $_->[0] } @{$sth->fetchall_arrayref()};
 		for my $child (@arr) {
-			unless ($visited[$child]) {
+			unless ($visited{$child}) {
 				push @queue, $child;
-				$visited[$child]++;
-				$parents[$child] = $node;
-				$paths[$child] = $paths[$node] + 1;
-				$self->{mem}->set("$user1.$child", $paths[$child]);
+				$visited{$child}++;
+				$parents{$child} = $node;
+				$paths{$child} = $paths{$node} + 1;
+				$self->{mem}->set("$user1.$child", $paths{$child});
 			}
 		}
 	}
-	my @path;
-	for (my $v = $user2; $v != $user1; $v = $parents[$v]) {
-		unshift @path, $v;
-	}
-	my %res = (
-		path_length => scalar @path,
-		path => \@path,
-	);
-	return $paths[$user2];
+	# my @path;
+	# for (my $v = $user2; $v != $user1; $v = $parents{$v}) {
+	# 	unshift @path, $v;
+	# }
+	# my %res = (
+	# 	path_length => scalar @path,
+	# 	path => \@path,
+	# );
+	return $paths{$user2};
 }
 
 sub set_data {
