@@ -46,8 +46,8 @@ sub _nofriends {
 	my $self = shift;
 	my $sth = $self->{dbh}->prepare(
 		"select name, surname, id from 
-			users as us left join users_relations as us_rel on id = id1  
-				where id2 is null;"
+			users as us left join users_relations as us_rel on id = id1 or id = id2
+				where id2 is null and id1 is null;"
 	);
 	$sth->execute();
 	return $sth->fetchall_arrayref({});
