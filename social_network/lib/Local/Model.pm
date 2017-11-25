@@ -56,6 +56,7 @@ sub _nofriends {
 sub _num_handshakes {
 	my ($self, $user1, $user2) = @_;
 	my (@queue, %paths, %parents, %visited);
+	return "null" if $user1 == $user2;
 	push @queue, $user1;
 	my $sth = $self->{dbh}->prepare("select * from users_relations where id1 = ? or id2 = ?");
 	$paths{$user1} = 0;
