@@ -1,0 +1,2 @@
+{"user":"satbek","password":"kocpak","dsn":"DBI:Pg:dbname=social_network","port":5432,"host":"127.0.0.1"}
+{"servers":["localhost:11211"],"namespace":"my::"}
