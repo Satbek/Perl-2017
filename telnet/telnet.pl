@@ -5,9 +5,10 @@ use DDP;
 use Socket ":all";
 use IO::Select;
 use AE;
+
 my ($host, $port) = @ARGV;
 
-my $s;
+my ($s, $resp);
 eval {
 	socket $s, AF_INET, SOCK_STREAM, IPPROTO_TCP
 		or die;
@@ -17,38 +18,30 @@ eval {
 	say "Trying $ip...";
 	my $sa = sockaddr_in($port, $addr) or die;
 	connect($s, $sa) or die ;
+	1;
 } or die "telnet: Unable to connect to remote host:";
 
 
 $s->autoflush(1);
 
+$SIG{INT} = sub { print $s chr(3) };
 
-say "Connected to $host";
+say "Connected to $host.";
 
-my $cv = AE::cv;
-my ($r_c,$w_s, $r_s);
-
-$r_c = AE::io \*STDIN, 0, sub {
-	my $line = <STDIN>;
-	$w_s = AE::io $s, 1, sub {
-		syswrite ($s, $line);
-		$r_s = AE::io $s, 0, sub {
-			local $/;
-			my $ans = <$s>;
-			if ($ans) {
-				print $ans;
-			}
-			else {
-				undef $r_c;
-				$cv->send;
-				print "Connection closed by foreign host\n";
-			}
-			undef $r_s;
-		};
-		undef $w_s;
-	};
-};
-
-
-$cv->recv;
-exit;
+if (my $pid = fork()){
+	while (defined($resp = <$s>)) {
+		print $resp;
+	}
+	kill "INT", $pid;
+	say "Connection closed by foreign host";
+	exit;
+}
+elsif (defined $pid) {
+	while (<STDIN>) {
+		print $s $_;
+	}
+	exit(0);
+}
+else {
+	die "can't fork!";
+}
