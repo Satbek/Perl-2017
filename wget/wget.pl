@@ -16,7 +16,7 @@ sub say_server_response {
 	say "\tContent-Length: ".$hdr->{"content-length"};
 	say "\tContent-Type: ".$hdr->{"content-type"};
 	say "\tKeep-Alive: ".$hdr->{"keep-alive"};
-	say "\tConnection: ".$hdr->{connection};
+	say "\tConnection: ".$hdr->{"connection"};
 }
 
 my %config;
