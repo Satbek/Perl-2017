@@ -1,0 +1,41 @@
+
+<!--
+		Credit goes to the Ruby on Rails team for this page
+		has been heavily based on the default Rails page that is
+		built with a scaffolded application.
+
+		Thanks a lot to them for their work.
+
+		See Ruby on Rails if you want a kickass framework in Ruby:
+		http://www.rubyonrails.org/
+-->
+<% IF err %><center class="error"><ol><li>Error:</li><%FOR e IN err %><li><% e %></li><% END %></ol></center><% END %>
+
+<h3>New Note</h3>
+<form class="paste_form" id="pasteform" name="pasteform" method="post" onsubmit="document.getElementById('submit').disable=true; document.getElementById('submit').value='Posting...';">
+		<div class="textarea_paste">
+				<textarea name="textpaste" class="paste_textarea" rows="15" style="oveflow: hidden; word-wrap: break-word; resize: none; height: 400px;"><% text %></textarea>
+		</div>
+		<div class="content_title">Note settings</div>
+		<div class="form_frame_left" style="width:460px;min-width:460px">
+				<div class="form_frame">
+						<div class="form_left">Note name</div>
+						<div class="form_right"><input type="text" name="title" size="20" maxlength="60" value="<% title %>" class="post_input"></div>
+				</div>
+
+				<div class="form_frame">
+						<div class="form_left">Users:</div>
+						<div class="form_right">
+							<textarea name="users" class="users_textarea" style="width: 285px; max-width: 285px; min-height: 30px">
+								<% users %>
+							</textarea>
+						</div>
+				</div>
+
+				<div class="form_frame">
+						<div class="form_left">&nbsp;</div>
+						<div class="form_right"><input type="submit" name="submit" value="New Note!" id="submit"></div>
+				</div>
+		</div>
+</form>
+
