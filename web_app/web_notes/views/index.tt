@@ -19,7 +19,7 @@
 		<div class="content_title">Note settings</div>
 		<div class="form_frame_left" style="width:460px;min-width:460px">
 				<div class="form_frame">
-						<div class="form_left">Note name</div>
+						<div class="form_left">Note title:</div>
 						<div class="form_right"><input type="text" name="title" size="20" maxlength="60" value="<% title %>" class="post_input"></div>
 				</div>
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="<% settings.charset %>">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title>fastpaste</title>
+  <title>Web Notes</title>
   <link rel="stylesheet" href="<% request.uri_base %>/css/style.css">
   <link rel="stylesheet" href="<% request.uri_base %>/css/style_dancer.css">
 
@@ -19,12 +19,19 @@
         <div id="sidebar">
 	    	<ul id="sidebar-items">
 				<li>
-					<h3>Hello, Guest!</h3>
-					<form action="">
-						<p><input type="text" name="username" placeholder="username" /></p>
-						<p><input type="password" name="password" placeholder="password" /></p>
-						<p><input type="submit" value="Login" /></p>
-					</form>
+					<% IF logged %>
+						<h3>Hello, <% user_name %>!</h3>
+						<form action="logout">
+							<p><input type="submit" value="Logout" /></p>
+						</form>
+					<% ELSE %>
+						<h3>Hello, Guest!</h3>
+						<form action="login">
+							<p><input type="text" name="username" placeholder="username" /></p>
+							<p><input type="password" name="password" placeholder="password" /></p>
+							<p><input type="submit" value="Login" /></p>
+						</form>
+					<% END %>
 				</li>
 				<li>
 					<h3>My Notes</h3>
