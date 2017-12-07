@@ -9,14 +9,14 @@ use Getopt::Long qw(:config no_ignore_case);;
 use Web::Query;
 
 sub say_server_response {
-	my $hdr = shift;
-	say "\tHTTP/".$hdr->{HTTPVersion}." ".$hdr->{Status}." ".$hdr->{Reason};
-	say "\tDate: ".$hdr->{date};
-	say "\tServer: ".$hdr->{server};
-	say "\tContent-Length: ".$hdr->{"content-length"};
-	say "\tContent-Type: ".$hdr->{"content-type"};
-	say "\tKeep-Alive: ".$hdr->{"keep-alive"};
-	say "\tConnection: ".$hdr->{"connection"};
+	my %hdr = %{shift()};
+	say "\tHTTP/".$hdr{HTTPVersion}." ".$hdr{Status}." ".$hdr{Reason};
+	delete $hdr{HTTPVersion};
+	delete $hdr{Status};
+	delete $hdr{Reason};
+	for my $head(keys %hdr) {
+		say "\t$head: ".$hdr{$head};
+	}
 }
 
 my %config;
@@ -43,6 +43,7 @@ my @queue = ($url);
 
 my $ACTIVE = 0;
 $AnyEvent::HTTP::MAX_PER_HOST = my $LIMIT = 100;
+$config{N} = $LIMIT if $config{N} > $LIMIT;
 
 my $FILE_COUNT = 0;
 
@@ -51,7 +52,6 @@ $cv->begin;
 my $worker;$worker = sub {
 	my $uri = shift @queue or return;
  	$cv->end if $seen{$uri} == $config{l};
-	#p %seen;
 	say "[$ACTIVE:$LIMIT] Start loading $uri (".(0+@queue).")";
 	$ACTIVE++;
 	$cv->begin;
@@ -70,19 +70,12 @@ my $worker;$worker = sub {
 						say_server_response($hdr) if $config{S};
 						say "End loading $uri: $hdr->{Status}";
 						$ACTIVE--;
-						#$seen{ $uri } = $hdr->{Status};
 						if ($hdr->{Status} == 200) {
-							# say $hdr->{URL};
 							# my @href = $body =~ m{<a[^>]*href=(|"([^"]+)"|(\S+))}i;
 							$FILE_COUNT++;
 							my $open = open(my $fh, ">", "$FILE_COUNT.txt");
-							$cv->begin;
-							my $w; $w = AE::io $fh, 1, sub {
-								syswrite($fh, $body) if $open;
-								close($fh);
-								undef $w;
-								$cv->end;
-							};
+							syswrite($fh, $body) if $open;
+							close($fh);
 							#my @href = $body =~ m{<a[^>]*href="([^"]+)"}sig;
 							my @href;
 							Web::Query->new($body)->find('a')->each(sub {
@@ -90,29 +83,21 @@ my $worker;$worker = sub {
 									my $rel = $elem->attr('href');
 									push @href, $rel;
 							});
-							#p @href;
-							#p %seen;
 							for my $href (@href) {
 								next if $href =~ /^https?:/ and $config{L};
 								my $new = URI->new_abs( $href, $hdr->{URL} );
 								next if $new !~ /^https?:/;
 								next if $new->host ne $host;
 								next if exists $seen{$new};
-								#p $new;
-								$seen{$new} = $seen{$hdr->{URL}} + 1 if $new;
+								$seen{$new} = $seen{$hdr->{URL}} + 1;
 								push @queue, $new;
-								#p @queue;
 							}
-							#p @queue;
-							# p $hdr;
-							# p $body;x
-						}	
+						}
 						else {
 							warn "Failed to fetch: $hdr->{Status} $hdr->{Reason}";
 						}
 						
 						if (@queue) {
-							#say "IN ", $config{N} - $ACTIVE;
 							$worker->() for 1..$config{N} - $ACTIVE;
 						}
 						$cv->end;
@@ -123,13 +108,12 @@ my $worker;$worker = sub {
 				say "Skip loading $uri: $hdr->{Status} ($hdr->{'content-length'})";
 				$ACTIVE--;
 				if (@queue) {
-					#say "OUT ", $config{N} - $ACTIVE;
 					$worker->() for 1..$config{N} - $ACTIVE;
 				}
 			}
 			$cv->end;
 		}
 	;
-};$worker->() ; $cv->end;
+};$worker->(); $cv->end;
 
 $cv->recv;
