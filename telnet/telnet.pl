@@ -3,8 +3,9 @@ use 5.016;
 use warnings;
 use DDP;
 use Socket ":all";
-use IO::Select;
 use AE;
+use AnyEvent::ReadLine::Gnu;
+use AnyEvent::Handle;
 
 my ($host, $port) = @ARGV;
 
@@ -24,24 +25,71 @@ eval {
 
 $s->autoflush(1);
 
-$SIG{INT} = sub { print $s chr(3) };
-
 say "Connected to $host.";
 
-if (my $pid = fork()){
-	while (defined($resp = <$s>)) {
-		print $resp;
+
+say "Escape character is '^]'.";
+
+
+my $cv = AE::cv;
+
+my ($read, $rl); 
+
+my ($r, $w);
+pipe ($r, $w);
+
+$w->autoflush();
+
+my $flag = 0;
+$cv->begin;
+$read = AE::io *STDIN, 0, sub {
+	my $line = <STDIN>;
+	if (length $line == 2 && ord($line) == 29 && !$flag) {
+		$flag++;
+		print $w $line;
+		$cv->begin;
+		$rl = AnyEvent::ReadLine::Gnu->new(in => $r, prompt => "telnet>", on_line => sub {
+			my $stdin_line = shift;
+			if (!$stdin_line) {
+				$flag = 0;
+				$cv->end;
+			}
+			elsif ($stdin_line eq "q" or $stdin_line eq "quit") {
+				AnyEvent::ReadLine::Gnu->print ("Connection closed.\n");
+				$cv->send;
+			}
+			else {
+				AnyEvent::ReadLine::Gnu->print ("?Invalid command\n");
+			}
+		});
 	}
-	kill "INT", $pid;
-	say "Connection closed by foreign host";
-	exit;
-}
-elsif (defined $pid) {
-	while (<STDIN>) {
-		print $s $_;
+	elsif($flag) {
+		print $w $line;
 	}
-	exit(0);
-}
-else {
-	die "can't fork!";
-}
+	else {
+		print $s $line;
+	}
+};
+
+
+my $hdl; $hdl = AnyEvent::Handle->new(
+	fh => $s,
+	on_error => sub {
+		my $hdl = shift;
+		$hdl->destroy;
+		$cv->send;
+	},
+	on_eof => sub {
+		my $hdl = shift;
+		$hdl->destroy;
+		$cv->send;
+		say "Connection closed by foreign host.";
+	},
+	on_read => sub {
+		my $line = $_[0]->rbuf;
+		print $line;
+		$_[0]->rbuf = "";
+	}
+);
+
+$cv->recv;
