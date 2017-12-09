@@ -52,7 +52,6 @@ my $read = AE::io *STDIN, 0, sub {
 			}
 			elsif ($line eq "q" or $line eq "quit") {
 				print ("Connection closed.\n");
-				$cv->send;#не работает :(
 				exit;
 			}
 			else {
