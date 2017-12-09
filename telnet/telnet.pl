@@ -45,7 +45,7 @@ my $read = AE::io *STDIN, 0, sub {
 	my $line = <STDIN>;
 	$who = "prompt" if (ord($line) == 29);
 	if ($who eq "prompt") {
-		while (defined (my $line = $term->readline('telnet>'))) {
+		while (defined (my $line = $term->readline('telnet>'))) {#я думаю ассинхронный промпт тут не нужен.
 			if (!$line) {
 				$who = "stdin";
 				last;
