@@ -1,11 +1,13 @@
 #!/usr/bin/perl
 use 5.016;
 use warnings;
-use DDP;
-use Socket ":all";
-use AE;
+use Coro;
 use AnyEvent::ReadLine::Gnu;
 use AnyEvent::Handle;
+use DDP;
+use DDP;
+use Socket ":all";
+$|++;
 
 my ($host, $port) = @ARGV;
 
@@ -33,38 +35,30 @@ say "Escape character is '^]'.";
 
 my $cv = AE::cv;
 
-my ($read, $rl); 
 
-my ($r, $w);
-pipe ($r, $w);
+my $who = "stdin";
 
-$w->autoflush();
+my $term = Term::ReadLine->new('telnet');
 
-my $flag = 0;
-$cv->begin;
-$read = AE::io *STDIN, 0, sub {
+
+my $read = AE::io *STDIN, 0, sub {
 	my $line = <STDIN>;
-	if (length $line == 2 && ord($line) == 29 && !$flag) {
-		$flag++;
-		print $w $line;
-		$cv->begin;
-		$rl = AnyEvent::ReadLine::Gnu->new(in => $r, prompt => "telnet>", on_line => sub {
-			my $stdin_line = shift;
-			if (!$stdin_line) {
-				$flag = 0;
-				$cv->end;
+	$who = "prompt" if (ord($line) == 29);
+	if ($who eq "prompt") {
+		while (defined (my $line = $term->readline('telnet>'))) {
+			if (!$line) {
+				$who = "stdin";
+				last;
 			}
-			elsif ($stdin_line eq "q" or $stdin_line eq "quit") {
-				AnyEvent::ReadLine::Gnu->print ("Connection closed.\n");
-				$cv->send;
+			elsif ($line eq "q" or $line eq "quit") {
+				print ("Connection closed.\n");
+				$cv->send;#не работает :(
+				exit;
 			}
 			else {
-				AnyEvent::ReadLine::Gnu->print ("?Invalid command\n");
+				print ("?Invalid command\n");
 			}
-		});
-	}
-	elsif($flag) {
-		print $w $line;
+		}
 	}
 	else {
 		print $s $line;
