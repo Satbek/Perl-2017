@@ -6,12 +6,24 @@ use warnings;
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 
-use Test::More tests => 13;
+use Test::More tests => 23;
 
 BEGIN { use_ok("Local::Date::Interval"); }
 
 my $int1 = Local::Date::Interval->new(duration => 7200); 
 my $int2 = Local::Date::Interval->new(days => 30, hours => 5, minutes => 10, seconds => 15);
+
+is($int1->days,           0, "Interval 1 days");
+is($int1->hours,          2, "Interval 1 hours");
+is($int1->minutes,        0, "Interval 1 minutes");
+is($int1->seconds,        0, "Interval 1 seconds");
+is($int1->duration,    7200, "Interval 1 duration");
+
+is($int2->days,          30, "Interval 2 days");
+is($int2->hours,          5, "Interval 2 hours");
+is($int2->minutes,       10, "Interval 2 minutes");
+is($int2->seconds,       15, "Interval 2 seconds");
+is($int2->duration, 2610615, "Interval 2 duration");
 
 # Interval operations test
 my $int3 = $int1 + 20;
