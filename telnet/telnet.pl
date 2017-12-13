@@ -9,6 +9,16 @@ use DDP;
 use Socket ":all";
 $|++;
 
+#connect vie AnyEvent::Socket
+#связять AnyEvent::Socket и AnyEvent::Handle
+#вся логика в AnyEvent::Gnu::Readline
+
+
+#Coro::Channel
+#Coro::Socket
+#Coro::Readline сделай
+#Coro::Handle
+
 my ($host, $port) = @ARGV;
 
 my ($s, $resp);
