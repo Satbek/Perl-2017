@@ -119,7 +119,19 @@ use overload
 
 sub _compare {
 	my ($left, $right) = @_;
-	return $left->epoch <=> $right->epoch;
+	if ( ref $left eq "Local::Date" and ref $right eq "Local::Date" ) {
+		return $left->epoch <=> $right->epoch;
+	}
+	elsif ( looks_like_number($right) and $right == int($right) and $right >= 0 ) {
+		return $left->epoch <=> $right;
+	}
+	elsif ( ref $right eq "Local::Date::Interval" ) {
+		return $left->epoch <=> $right->duration;
+	}
+	else {
+		confess "can't compare $left and $right";
+	}
+
 }
 
 #right may be a string
@@ -152,7 +164,11 @@ sub _add {
 }
 
 sub _subtract {
-	my ($self, $value) = @_;
+	my ($self, $value, $swap) = @_;
+	if ($swap  and ref $value ne "Local::Date") {
+		confess "Local::Date can be substracted only from another Local::Date";
+	}
+
 	if ( looks_like_number($value) and $value == int($value) ) {
 		return $self->epoch - $value;
 	}
@@ -171,14 +187,34 @@ sub _subtract {
 
 sub _add_assign {
 	my ($self, $value) = @_;
-	$self->_set_epoch($self->epoch + $value);
-	return $self;
+	if ( looks_like_number($value) and $value == int($value) ) {
+		$self->_set_epoch($self->epoch + $value);
+		return $self;
+	}
+	elsif ( ref $value eq "Local::Date::Interval" ) {
+		my $epoch = $self->epoch + $value->duration;
+		$self->_set_epoch($epoch);
+		return $self;
+	}
+	else {
+		confess "incorect operand $value in += operation";
+	}
 }
 
 sub _subtract_assign {
 	my ($self, $value) = @_;
-	$self->_set_epoch($self->epoch - $value);
-	return $self;
+	if ( looks_like_number($value) and $value == int($value) ) {
+		$self->_set_epoch($self->epoch - $value);
+		return $self;
+	}
+	elsif ( ref $value eq "Local::Date::Interval" ) {
+		my $epoch = $self->epoch - $value->duration;
+		$self->_set_epoch($epoch);
+		return $self;
+	}
+	else {
+		confess "incorect operand $value in += operation";
+	}
 }
 #проверяем правильно ли вызван конструктор.
 
