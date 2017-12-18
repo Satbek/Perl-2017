@@ -8,6 +8,7 @@ use DDP;
 use FindBin;
 use lib "$FindBin::Bin/..";
 use Local::DateTypes;
+use Scalar::Util qw(looks_like_number);
 
 #задаем локаль
 setlocale(LC_TIME, "en_US.UTF-8");
@@ -100,7 +101,7 @@ before "_build_duration" => sub {
 use overload
 	'""'		=> \&_to_string,
 	"<=>"		=> \&_compare,
-	'0+'		=> sub { shift->duration },
+	"cmp"		=> \&_compare_str,
 	'+'			=> \&_add,
 	'-'			=> \&_subtract,
 	'+='		=> \&_add_assign,
@@ -113,32 +114,85 @@ sub _to_string {
 
 sub _compare {
 	my ($left, $right) = @_;
-	return $left->duration <=> $right->duration;
+	if ( ref $right eq "Local::Date::Interval" ) {
+		return $left->duration <=> $right->duration;
+	}
+	elsif ( looks_like_number($right) and $right == int($right) and $right >= 0 ) {
+		return $left->duration <=> $right;
+	}
+	else {
+		confess "can't compare $left and $right";
+	}
+}
+
+#right may be a string
+sub _compare_str {
+	my ($left, $right) = @_;
+	if ( ! ref $right ) {
+		return $left->_to_string cmp $right;
+	}
+	confess "can't compare $left and $right";
 }
 
 #todo обработку interval, исключений, и других случаев
 sub _add {
 	my ($self, $value) = @_;
-	$self->_set_duration($self->duration + $value);
-	return $self->duration;
+	if ( looks_like_number($value) and $value == int($value) ) {
+		return $self->duration + $value;
+	}
+	elsif ( ref $value eq "Local::Date::Interval" ) {
+		my $duration = $self->duration + $value->duration;
+		return Local::Date::Interval->new(duration => $duration);
+	}
+	else {
+		confess "incorect operand $value in + operation";
+	}
 }
 
 sub _subtract {
 	my ($self, $value) = @_;
-	$self->_set_duration($self->duration - $value);
-	return $self->duration;
+	if ( looks_like_number($value) and $value == int($value) ) {
+		return $self->duration - $value;
+	}
+	elsif ( ref $value eq "Local::Date::Interval" ) {
+		my $duration = $self->duration - $value->duration;
+		return Local::Date::Interval->new(duration => $duration);
+	}
+	else {
+		confess "incorect operand $value in - operation";
+	}
 }
 
 sub _add_assign {
 	my ($self, $value) = @_;
-	$self->_set_duration($self->duration + $value);
-	return $self;
+	if ( looks_like_number($value) and $value == int($value) ) {
+		$self->_set_duration($self->duration + $value);
+		return $self;
+	}
+	elsif ( ref $value eq "Local::Date::Interval" ) {
+		my $duration = $self->duration + $value->duration;
+		$self->_set_duration($duration);
+		return $self;
+	}
+	else {
+		confess "incorect operand $value in += operation";
+	}
 }
 
 sub _subtract_assign {
 	my ($self, $value) = @_;
-	$self->_set_duration($self->duration - $value);
-	return $self;
+	if ( looks_like_number($value) and $value == int($value) ) {
+		$self->_set_duration($self->duration - $value);
+		return $self;
+	}
+	elsif ( ref $value eq "Local::Date::Interval" ) {
+		my $duration = $self->duration - $value->duration;
+		$self->_set_duration($duration);
+		return $self;
+	}
+	else {
+		confess "incorect operand $value in -= operation";
+	}
 }
 
 #обеспечиваем консистентность объекта
