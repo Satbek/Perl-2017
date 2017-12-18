@@ -10,11 +10,11 @@ use POSIX qw ( locale_h );
 use List::Util qw ( any );
 use Carp qw(confess);
 use Local::DateTypes;
-
+use Scalar::Util qw(looks_like_number);
+use Local::Date::Interval;
 #задаем локаль, чтобы время выводились на английском
 
 setlocale(LC_TIME, "en_US.UTF-8");
-setlocale(LC_ALL, "en_US.UTF-8");
 
 #day, month, year, hours, minutes, seconds - для компонентов даты
 
@@ -109,7 +109,8 @@ has 'format' => (
 use overload
 	'""'		=> \&_to_string,
 	"<=>"		=> \&_compare,
-	'0+'		=> sub { shift-> epoch },
+	"cmp"		=> \&_compare_str,
+	#'0+'		=> sub { shift-> epoch },
 	'+'			=> \&_add,
 	'-'			=> \&_subtract,
 	'+='		=> \&_add_assign,
@@ -121,6 +122,15 @@ sub _compare {
 	return $left->epoch <=> $right->epoch;
 }
 
+#right may be a string
+sub _compare_str {
+	my ($left, $right) = @_;
+	if ( ! ref $right ) {
+		return $left->_to_string cmp $right;
+	}
+	confess "can't compare $left and $right";
+}
+
 sub _to_string {
 	my $self = shift;
 	return strftime $self->format, gmtime ( $self->epoch ) ;
@@ -129,14 +139,34 @@ sub _to_string {
 #todo обработку interval, исключений, и других случаев
 sub _add {
 	my ($self, $value) = @_;
-	$self->_set_epoch($self->epoch + $value);
-	return $self->epoch;
+	if ( looks_like_number($value) and $value == int($value) ) {
+		return $self->epoch + $value;
+	}
+	elsif ( ref $value eq "Local::Date::Interval" ) {
+		my $epoch = $self->epoch + $value->duration;
+		return Local::Date->new(epoch => $epoch);
+	}
+	else {
+		confess "incorect operand $value in + operation";
+	}
 }
 
 sub _subtract {
 	my ($self, $value) = @_;
-	$self->_set_epoch($self->epoch - $value);
-	return $self->epoch;
+	if ( looks_like_number($value) and $value == int($value) ) {
+		return $self->epoch - $value;
+	}
+	elsif ( ref $value eq "Local::Date::Interval" ) {
+		my $epoch = $self->epoch - $value->duration;
+		return Local::Date->new(epoch => $epoch);
+	}
+	elsif ( ref $self eq "Local::Date" ) {
+		my $duration = $self->epoch - $value->epoch;
+		return Local::Date::Interval->new(duration => $duration);	
+	}
+	else {
+		confess "incorect operand $value in - operation";
+	}
 }
 
 sub _add_assign {
