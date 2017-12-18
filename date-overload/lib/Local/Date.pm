@@ -110,16 +110,14 @@ use overload
 	'""'		=> \&_to_string,
 	"<=>"		=> \&_compare,
 	"cmp"		=> \&_compare_str,
-	#'0+'		=> sub { shift-> epoch },
 	'+'			=> \&_add,
 	'-'			=> \&_subtract,
 	'+='		=> \&_add_assign,
 	'-='		=> \&_subtract_assign;
-#	fallback	=> 1;
 
 sub _compare {
 	my ($left, $right) = @_;
-	if ( ref $left eq "Local::Date" and ref $right eq "Local::Date" ) {
+	if ( ref $right eq "Local::Date" ) {
 		return $left->epoch <=> $right->epoch;
 	}
 	elsif ( looks_like_number($right) and $right == int($right) and $right >= 0 ) {
@@ -131,7 +129,6 @@ sub _compare {
 	else {
 		confess "can't compare $left and $right";
 	}
-
 }
 
 #right may be a string
@@ -213,7 +210,7 @@ sub _subtract_assign {
 		return $self;
 	}
 	else {
-		confess "incorect operand $value in += operation";
+		confess "incorect operand $value in -= operation";
 	}
 }
 #проверяем правильно ли вызван конструктор.
