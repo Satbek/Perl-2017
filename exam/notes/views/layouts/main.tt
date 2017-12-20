@@ -3,8 +3,9 @@
 <head>
   <meta charset="<% settings.charset %>">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <title><% title %></title>
+  <title>Web Notes</title>
   <link rel="stylesheet" href="<% request.uri_base %>/css/style.css">
+  <link rel="stylesheet" href="<% request.uri_base %>/css/style_dancer.css">
 
 <!-- Grab jQuery from a CDN, fall back to local if necessary -->
 <script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
@@ -14,9 +15,46 @@
 
 </head>
 <body>
-<% content %>
-<div id="footer">
-Powered by <a href="http://perldancer.org/">Dancer2</a> <% dancer_version %>
-</div>
+    <div id="page">
+        <div id="sidebar">
+	    	<ul id="sidebar-items">
+				<li>
+					<% IF logged %>
+						<h3>Hello, <% user_name %>!</h3>
+						<form action="logout">
+							<p><input type="submit" value="Logout" /></p>
+						</form>
+					<% ELSE %>
+						<h3>Hello, Guest!</h3>
+						<form action="login">
+							<p><input type="text" name="username" placeholder="username" /></p>
+							<p><input type="password" name="password" placeholder="password" /></p>
+							<p><input type="submit" value="Login" /><input type="submit" value="Register" /></p>
+						</form>
+					<% END %>
+				</li>
+				<li>
+					<h3>My Notes</h3>
+					<ul class="links"> 
+						<% FOR lp IN last_paste %>
+							<li>
+								<a href="/<% lp.id %>"><% lp.title || 'untitled' %></a>
+								<!-- b-note-text b-note-users -->
+							</li>
+						<% END %>
+					</ul>
+				</li>
+			</ul>
+		</div>
+		<div id="content">
+		    <div id="header">
+		        <h1><a href="/">Web Notes</a></h1>
+			<h2>Welcome!</h2>
+		    </div>
+		    <div id="getting-started"><% content %></div>
+		    <div style="clear: both"></div>
+		</div>
+    </div>
+    <div id="footer">Powered by <a href="http://perldancer.org/">Dancer2</a> <% dancer_version %></div>
 </body>
 </html>
