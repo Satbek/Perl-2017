@@ -39,7 +39,23 @@ has 'password' => (
 	writer => '_set_password',
 );
 
-#методы
+sub encrypt_password {
+	#возращает пароль какой он будет в базе
+	#todo шифрование и проверка есть ли это в базе
+	#пользователь ввел -> в базе
+	my $encr_passwd = shift;
+	return $encr_passwd;
+};
+
+sub decrypt_password {
+	#todo
+	#в базе -> пользователь ввел
+	my $decr_passwd = shift;
+	return $decr_passwd;
+}
+
+#public методы
+#todo, написать класс Note для работы с заметками
 sub create_note {
 
 }
@@ -48,23 +64,47 @@ sub get_notes {
 
 }
 
-#if user_with
+
+#вернет 1 если сущетсвует пользователь с таким логином и паролем
+#0 иначе
 sub login {
 	my $self = shift;
+	my $username = $self->username;
+	my $password = $self->password;
+	#шифруем пароль
+	$password = encrypt_password($password);
+	my $sth = database->prepare('select id from users where 
+			username = ? and password = ?');
+	$sth->execute($username, $password);
+	my $res = $sth->fetchrow_hashref();
+	return $res->{id} ? 1 : 0;
 }
 
+sub _user_exist {
+	my $self = shift;
+	my $username = $self->username;
+	my $sth = database->prepare('select id from users where 
+			username = ?');
+	$sth->execute($username);
+	my $res = $sth->fetchrow_hashref();
+	return $res->{id} ? 1 : 0;
+}
+
+#вернет 1 если смогла зарегистрировать, 0 если нет
 sub register {
-
+	my $self = shift;
+	my $username = $self->username;
+	my $password = $self->password;
+	$password = encrypt_password($password);
+	if (!$self->_user_exist) {
+		#если его не существует, то добавим его в базу
+		my $sth = database->prepare("insert into users (username, password)
+					values (?, ?)");
+		$sth->execute($username, $password);
+		return 1;
+	} else {
+		return 0;
+	}
 }
-#Проверяем есть ли такой юзер в базе
-# after '_set_username' => sub {
-# 	my $self = shift;
-# 	my $username = $self->username;
-# 	my $sth = database->prepare 
-# 		('SELECT id from users where username = "$username"');
-# 	unless ($sth->fetchrow_hashref()) {
-# 		confess "There is no user with username $username";
-# 	}
-# };
 
 1;
