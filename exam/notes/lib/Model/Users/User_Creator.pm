@@ -1,4 +1,4 @@
-package User_Creator;
+package Model::Users::User_Creator;
 use Moose;
 use 5.016;
 use DDP;
