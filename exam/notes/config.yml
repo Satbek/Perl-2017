@@ -20,12 +20,12 @@ charset: "UTF-8"
 
 template: "simple"
 
-# template: "template_toolkit"
-# engines:
-#   template:
-#     template_toolkit:
-#       start_tag: '<%'
-#       end_tag:   '%>'
+template: "template_toolkit"
+engines:
+  template:
+    template_toolkit:
+      start_tag: '<%'
+      end_tag:   '%>'
 
 # session engine
 #
@@ -50,3 +50,16 @@ template: "simple"
 #      cookie_name: eshop.session
 #      is_secure: 1
 #      is_http_only: 1
+
+plugins:
+  Database:
+    driver: 'Pg'
+    database: 'notes'
+    host: 'localhost'
+    port: 5432
+    username: 'notes'
+    password: 'notes'
+    dbi_params:
+      RaiseError: 1
+      AutoCommit: 1
+    log_queries: 1
