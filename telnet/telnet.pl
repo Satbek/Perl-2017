@@ -5,94 +5,86 @@ use Coro;
 use AnyEvent::ReadLine::Gnu;
 use AnyEvent::Handle;
 use DDP;
-use DDP;
-use Socket ":all";
+use AnyEvent::Socket;
 $|++;
-
 #connect vie AnyEvent::Socket
 #связять AnyEvent::Socket и AnyEvent::Handle
 #вся логика в AnyEvent::Gnu::Readline
-
 
 #Coro::Channel
 #Coro::Socket
 #Coro::Readline сделай
 #Coro::Handle
 
+
+
+
+
+
+
 my ($host, $port) = @ARGV;
-
-my ($s, $resp);
-eval {
-	socket $s, AF_INET, SOCK_STREAM, IPPROTO_TCP
-		or die;
-	my $addr = gethostbyname $host or die;
-
-	my $ip = inet_ntoa $addr or die;
-	say "Trying $ip...";
-	my $sa = sockaddr_in($port, $addr) or die;
-	connect($s, $sa) or die ;
-	1;
-} or die "telnet: Unable to connect to remote host:";
-
-
-$s->autoflush(1);
-
-say "Connected to $host.";
-
-
-say "Escape character is '^]'.";
-
 
 my $cv = AE::cv;
 
+my $addr = gethostbyname $host or die;
+my $ip = inet_ntoa $addr or die;
+say "Trying $ip...";
 
-my $who = "stdin";
-
-my $term = Term::ReadLine->new('telnet');
+my ($handle, $rl);
 
 
-my $read = AE::io *STDIN, 0, sub {
-	my $line = <STDIN>;
-	$who = "prompt" if (ord($line) == 29);
-	if ($who eq "prompt") {
-		while (defined (my $line = $term->readline('telnet>'))) {#я думаю ассинхронный промпт тут не нужен.
-			if (!$line) {
-				$who = "stdin";
-				last;
+tcp_connect $host, $port, sub {
+	my ($fh) = @_ or die "telnet: Unable to connect to remote host:";
+	say "Connected to $host.";
+	say "Escape character is '^]'.";
+	$handle = AnyEvent::Handle->new(
+		fh => $fh,
+		on_error => sub {
+			$_[0]->destroy;
+			$cv->send("Connection closed by foreign host.\n");
+		},
+		on_eof => sub {
+			$handle->destroy; # destroy handle
+			$cv->send("Connection closed by foreign host.\n");
+		},
+		on_read => sub {
+			$rl->print( $_[0]->rbuf );
+			$_[0]->rbuf = "";
+		},
+	);
+};
+
+my $telnet = 0;
+$rl = AnyEvent::ReadLine::Gnu->new(
+	prompt => undef,
+	on_line => sub {
+		my $line = shift;
+		if ( $line ne "^]" and !$telnet ) {
+			$handle->push_write($line."\n");
+		}
+		elsif ( $line eq "^]" and !$telnet ) {
+			$telnet = 1;
+			$rl->hide;
+			$rl->print("telnet");
+			$rl->show;
+		}
+		elsif ( $telnet ) {
+			if ( $line eq "quit" or $line eq "q" ) {
+				$cv->send("Connection closed.\n");
 			}
-			elsif ($line eq "q" or $line eq "quit") {
-				print ("Connection closed.\n");
-				exit;
+			elsif ( $line eq "" ) {
+				$telnet = 0;
 			}
 			else {
-				print ("?Invalid command\n");
+				$rl->print("?Invalid command\n");
+				$rl->hide;
+				$rl->print("telnet");
+				$rl->show;
 			}
 		}
 	}
-	else {
-		print $s $line;
-	}
-};
-
-
-my $hdl; $hdl = AnyEvent::Handle->new(
-	fh => $s,
-	on_error => sub {
-		my $hdl = shift;
-		$hdl->destroy;
-		$cv->send;
-	},
-	on_eof => sub {
-		my $hdl = shift;
-		$hdl->destroy;
-		$cv->send;
-		say "Connection closed by foreign host.";
-	},
-	on_read => sub {
-		my $line = $_[0]->rbuf;
-		print $line;
-		$_[0]->rbuf = "";
-	}
 );
 
-$cv->recv;
+
+print $cv->recv;
+
