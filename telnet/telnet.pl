@@ -16,12 +16,6 @@ $|++;
 #Coro::Readline сделай
 #Coro::Handle
 
-
-
-
-
-
-
 my ($host, $port) = @ARGV;
 
 my $cv = AE::cv;
