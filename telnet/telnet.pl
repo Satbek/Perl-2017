@@ -6,6 +6,7 @@ use AnyEvent::ReadLine::Gnu;
 use AnyEvent::Handle;
 use DDP;
 use AnyEvent::Socket;
+use Socket;
 $|++;
 #connect vie AnyEvent::Socket
 #связять AnyEvent::Socket и AnyEvent::Handle
